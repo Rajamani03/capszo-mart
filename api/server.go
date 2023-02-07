@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -53,8 +52,8 @@ func (server *Server) SetupRouter() {
 	router.POST("/access-token/renew", server.renewToken)
 	router.POST("/customer/signup/get-otp", server.getCustomerSignupOTP)
 	router.POST("/customer/signup", server.customerSignup)
-	// router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
-	// router.POST("/customer/login", server.customerLogin)
+	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
+	router.POST("/customer/login", server.customerLogin)
 
 	// // customer authorized routes
 	// customerRouter := router.Group("/customer").Use(middleware.CustomerAuthMiddleware(server.token))
@@ -91,31 +90,6 @@ func getID(objectID interface{}) string {
 }
 
 func (server *Server) home(ctx *gin.Context) {
-
-	// var customer database.Customer
-
-	// customer.Name = "Rajamani"
-	// customer.MobileNumber = "8248765392"
-	// customer.EmailAddress = "h.rajamani03@gmail.com"
-
-	coll := server.mongoDB.Database("capszo").Collection("customers")
-	// result, err := coll.InsertOne(context.TODO(), customer)
-
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
-
-	var cs map[string]interface{}
-	filter := bson.D{{Key: "name", Value: "Rajamani"}}
-	op := coll.FindOne(context.TODO(), filter)
-
-	op.Decode(&cs)
-
-	fmt.Println(getID(cs["_id"]))
-
-	ctx.JSON(http.StatusOK, cs)
-
 	// response
-	// ctx.JSON(http.StatusOK, gin.H{"message": "Welcome to Capszo Mart", "environment": gin.Mode(), "db": toString(result.InsertedID)})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Welcome to Capszo Mart", "environment": gin.Mode()})
 }
