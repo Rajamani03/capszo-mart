@@ -12,8 +12,8 @@ type Address struct {
 }
 
 type BasketItem struct {
-	ItemID   string  `json:"item_id" binding:"required,numeric"`
-	Quantity float64 `json:"quantity" binding:"required,numeric"`
+	ItemID   string  `json:"item_id" bson:"item_id" binding:"required,alphanum"`
+	Quantity float64 `json:"quantity" bson:"quantity" binding:"required,numeric"`
 }
 
 type OrderItem struct {

@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type loginOTPRequest struct {
@@ -49,6 +51,17 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 	// otp := util.GetOTP(6)
 	otp := "654321"
 	request.OTP = util.Hash(otp + server.config.Salt)
+
+	// TTL index
+	model := mongo.IndexModel{
+		Keys:    bson.M{"created_at": 1},
+		Options: options.Index().SetExpireAfterSeconds(60),
+	}
+	_, err = loginInfoColl.Indexes().CreateOne(ctx, model)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
 	// store the login data to login_info collection
 	request.CreatedAt = time.Now()
