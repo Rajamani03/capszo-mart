@@ -1,6 +1,7 @@
 package api
 
 import (
+	"capszo-mart/middleware"
 	"capszo-mart/token"
 	"capszo-mart/util"
 	"context"
@@ -55,18 +56,17 @@ func (server *Server) SetupRouter() {
 	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
 	router.POST("/customer/login", server.customerLogin)
 
-	// // customer authorized routes
-	// customerRouter := router.Group("/customer").Use(middleware.CustomerAuthMiddleware(server.token))
-	// customerRouter.GET("/grocery-items/:mart-id", server.getAllGroceryItems)
+	// customer authorized routes
+	customerRouter := router.Group("/customer").Use(middleware.CustomerAuthMiddleware(server.token))
+	customerRouter.GET("/grocery-items/:mart-id", server.getAllGroceryItems)
 	// customerRouter.PUT("/grocery-basket", server.updateGroceryBasket)
 	// customerRouter.PUT("/address", server.updateCustomerAddress)
 	// customerRouter.POST("/grocery-order", server.groceryOrder)
 	// // customerRouter.PUT("/email", server.updateCustomerEmail)
 
-	// // admin routes
-	// adminRouter := router.Group("/admin")
-
-	// adminRouter.GET("/test-token", server.getTestToken)
+	// admin routes
+	adminRouter := router.Group("/admin")
+	adminRouter.GET("/test-token", server.getTestToken)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct

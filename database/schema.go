@@ -21,22 +21,21 @@ type Customer struct {
 }
 
 type GroceryItem struct {
-	ID              uint64    `json:"grocery_item_id" gorm:"column:id;type:BIGINT UNSIGNED NOT NULL;AUTO_INCREMENT;primaryKey"`
-	MartID          uint64    `json:"-" gorm:"column:mart_id"`
-	Name            string    `json:"name"`
-	ImageURL        string    `json:"image_url" gorm:"column:image_url"`
-	Mrp             float64   `json:"mrp"`
-	SellingPrice    float64   `json:"price"`
-	CostPrice       float64   `json:"-"`
-	Quantity        float64   `json:"quantity"`
-	Unit            string    `json:"unit"`
-	StepQuantity    float32   `json:"step_quantity"`
-	IndividualLimit float64   `json:"individual_limit"`
-	StockQuantity   float64   `json:"-"`
-	Category        string    `json:"category"`
-	Brand           string    `json:"brand"`
-	SubCategory     string    `json:"sub_category"`
-	OtherNames      string    `json:"other_names"`
+	MartID          string    `json:"-" bson:"mart_id"`
+	Name            string    `json:"name" bson:"name"`
+	ImageURL        string    `json:"image_url" bson:"image_url"`
+	Mrp             float64   `json:"mrp" bson:"mrp"`
+	SellingPrice    float64   `json:"price" bson:"selling_price"`
+	CostPrice       float64   `json:"-" bson:"cost_price"`
+	Quantity        float64   `json:"quantity" bson:"quantity"`
+	Unit            string    `json:"unit" bson:"unit"`
+	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity"`
+	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit"`
+	StockQuantity   float64   `json:"-" bson:"stock_quantity"`
+	Brand           string    `json:"brand" bson:"brand"`
+	Category        string    `json:"category" bson:"category"`
+	SubCategory     string    `json:"sub_category" bson:"sub_category"`
+	OtherNames      []string  `json:"other_names" bson:"other_names"`
 	CreatedAt       time.Time `json:"-" bson:"created_at"`
 	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
 	DeletedAt       time.Time `json:"-" bson:"deleted_at"`
@@ -93,14 +92,12 @@ type Truck struct {
 }
 
 type Mart struct {
-	ID              uint64  `json:"mart_id"`
-	Name            string  `json:"name"`
-	AddressID       uint64  `json:"-" gorm:"column:address_id"`
-	Address         Address `json:"mart_address" gorm:"foreignKey:AddressID;references:ID"`
-	Status          string  `json:"mart_status"`
-	PackagingCharge float64 `json:"packaging_charge"`
-	DeliveryCharge  float64 `json:"delivery_charge"`
-	RefreshTokenID  string  `json:"-" gorm:"column:refresh_token_id"`
+	Name            string  `json:"name" bson:"name"`
+	Address         Address `json:"mart_address" bson:"address"`
+	Status          string  `json:"mart_status" bson:"status"`
+	PackagingCharge float64 `json:"packaging_charge" bson:"packaging_charge"`
+	DeliveryCharge  float64 `json:"delivery_charge" bson:"delivery_charge"`
+	RefreshTokenID  string  `json:"-" bson:"refresh_token_id"`
 }
 
 type GroceryMisc struct {
