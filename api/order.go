@@ -28,7 +28,7 @@ type orderRequest struct {
 
 func (server *Server) order(ctx *gin.Context) {
 	var request orderRequest
-	var order database.GroceryOrder
+	var order database.Order
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceryColl := db.Collection("groceries")
@@ -156,6 +156,7 @@ func (server *Server) order(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+	order.ID = result.InsertedID
 
 	// clear the grocery basket of customer in DB
 	objectID, err = primitive.ObjectIDFromHex(tokenPayload.UserID)
@@ -171,7 +172,7 @@ func (server *Server) order(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusCreated, gin.H{"order_id": getID(result.InsertedID), "order_info": order})
+	ctx.JSON(http.StatusCreated, gin.H{"order_info": order})
 }
 
 // func getQuantityGrams(unit string, quantity float64) float64 {

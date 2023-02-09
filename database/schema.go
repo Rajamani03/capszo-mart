@@ -2,11 +2,10 @@ package database
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Customer struct {
+	ID             interface{}  `json:"-" bson:"_id,omitempty"`
 	Name           string       `json:"name" bson:"name" binding:"required,alpha"`
 	MobileNumber   string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	EmailAddress   string       `json:"email_address" bson:"email_address"`
@@ -23,28 +22,29 @@ type Customer struct {
 }
 
 type Item struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id"`
-	MartID          string             `json:"-" bson:"mart_id"`
-	Name            string             `json:"name" bson:"name"`
-	ImageURL        string             `json:"image_url" bson:"image_url"`
-	Mrp             float64            `json:"mrp" bson:"mrp"`
-	SellingPrice    float64            `json:"price" bson:"selling_price"`
-	CostPrice       float64            `json:"-" bson:"cost_price"`
-	Quantity        float64            `json:"quantity" bson:"quantity"`
-	Unit            ItemUnit           `json:"unit" bson:"unit"`
-	StepQuantity    float32            `json:"step_quantity" bson:"step_quantity"`
-	IndividualLimit float64            `json:"individual_limit" bson:"individual_limit"`
-	StockQuantity   float64            `json:"-" bson:"stock_quantity"`
-	Brand           string             `json:"brand" bson:"brand"`
-	Category        string             `json:"category" bson:"category"`
-	SubCategory     string             `json:"sub_category" bson:"sub_category"`
-	OtherNames      []string           `json:"other_names" bson:"other_names"`
-	CreatedAt       time.Time          `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time          `json:"-" bson:"updated_at"`
-	DeletedAt       time.Time          `json:"-" bson:"deleted_at"`
+	ID              interface{} `json:"item_id" bson:"_id,omitempty"`
+	MartID          string      `json:"-" bson:"mart_id"`
+	Name            string      `json:"name" bson:"name"`
+	ImageURL        string      `json:"image_url" bson:"image_url"`
+	Mrp             float64     `json:"mrp" bson:"mrp"`
+	SellingPrice    float64     `json:"price" bson:"selling_price"`
+	CostPrice       float64     `json:"-" bson:"cost_price"`
+	Quantity        float64     `json:"quantity" bson:"quantity"`
+	Unit            ItemUnit    `json:"unit" bson:"unit"`
+	StepQuantity    float32     `json:"step_quantity" bson:"step_quantity"`
+	IndividualLimit float64     `json:"individual_limit" bson:"individual_limit"`
+	StockQuantity   float64     `json:"-" bson:"stock_quantity"`
+	Brand           string      `json:"brand" bson:"brand"`
+	Category        string      `json:"category" bson:"category"`
+	SubCategory     string      `json:"sub_category" bson:"sub_category"`
+	OtherNames      []string    `json:"other_names" bson:"other_names"`
+	CreatedAt       time.Time   `json:"-" bson:"created_at"`
+	UpdatedAt       time.Time   `json:"-" bson:"updated_at"`
+	DeletedAt       time.Time   `json:"-" bson:"deleted_at"`
 }
 
-type GroceryOrder struct {
+type Order struct {
+	ID                   interface{} `json:"order_id" bson:"_id,omitempty"`
 	CustomerID           string      `json:"-" bson:"customer_id"`
 	MartID               string      `json:"-" bson:"mart_id" gorm:"column:mart_id" binding:"required,numeric"`
 	CustomerMobileNumber string      `json:"customer_mobile_number" bson:"customer_mobile_number" binding:"required,numeric"`
@@ -67,38 +67,39 @@ type GroceryOrder struct {
 }
 
 type Hauler struct {
-	ID             uint64    `json:"hauler_id"`
-	Name           string    `json:"name" binding:"required,alpha"`
-	MobileNumber   string    `json:"mobile_number" binding:"required,numeric,len=10"`
-	Gender         string    `json:"gender"`
-	Rating         string    `json:"rating"`
-	Location       string    `json:"hauler_location"`
-	Status         string    `json:"hauler_status"`
-	RefreshTokenID string    `json:"-" gorm:"column:refresh_token_id"`
-	CreatedAt      time.Time `json:"-" bson:"created_at"`
-	UpdatedAt      time.Time `json:"-" bson:"updated_at"`
-	DeletedAt      time.Time `json:"-" bson:"deleted_at"`
+	ID             interface{} `json:"hauler_id" bson:"_id,omitempty"`
+	Name           string      `json:"name" binding:"required,alpha"`
+	MobileNumber   string      `json:"mobile_number" binding:"required,numeric,len=10"`
+	Gender         string      `json:"gender"`
+	Rating         string      `json:"rating"`
+	Location       string      `json:"hauler_location"`
+	Status         string      `json:"hauler_status"`
+	RefreshTokenID string      `json:"-" gorm:"column:refresh_token_id"`
+	CreatedAt      time.Time   `json:"-" bson:"created_at"`
+	UpdatedAt      time.Time   `json:"-" bson:"updated_at"`
+	DeletedAt      time.Time   `json:"-" bson:"deleted_at"`
 }
 
 type Truck struct {
-	ID            uint64    `json:"truck_id"`
-	Brand         string    `json:"brand"`
-	Model         string    `json:"model"`
-	VehicleNumber string    `json:"vehicle_number"`
-	Name          string    `json:"name"`
-	Status        string    `json:"truck_status"`
-	CreatedAt     time.Time `json:"-" bson:"created_at"`
-	UpdatedAt     time.Time `json:"-" bson:"updated_at"`
-	DeletedAt     time.Time `json:"-" bson:"deleted_at"`
+	ID            interface{} `json:"truck_id" bson:"_id,omitempty"`
+	Brand         string      `json:"brand"`
+	Model         string      `json:"model"`
+	VehicleNumber string      `json:"vehicle_number"`
+	Name          string      `json:"name"`
+	Status        string      `json:"truck_status"`
+	CreatedAt     time.Time   `json:"-" bson:"created_at"`
+	UpdatedAt     time.Time   `json:"-" bson:"updated_at"`
+	DeletedAt     time.Time   `json:"-" bson:"deleted_at"`
 }
 
 type Mart struct {
-	Name            string  `json:"name" bson:"name"`
-	Address         Address `json:"mart_address" bson:"address"`
-	Status          string  `json:"mart_status" bson:"status"`
-	PackagingCharge float64 `json:"packaging_charge" bson:"packaging_charge"`
-	DeliveryCharge  float64 `json:"delivery_charge" bson:"delivery_charge"`
-	RefreshTokenID  string  `json:"-" bson:"refresh_token_id"`
+	ID              interface{} `json:"mart_id" bson:"_id,omitempty"`
+	Name            string      `json:"name" bson:"name"`
+	Address         Address     `json:"mart_address" bson:"address"`
+	Status          string      `json:"mart_status" bson:"status"`
+	PackagingCharge float64     `json:"packaging_charge" bson:"packaging_charge"`
+	DeliveryCharge  float64     `json:"delivery_charge" bson:"delivery_charge"`
+	RefreshTokenID  string      `json:"-" bson:"refresh_token_id"`
 }
 
 type GroceryMisc struct {
