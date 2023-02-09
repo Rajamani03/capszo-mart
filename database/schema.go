@@ -9,7 +9,7 @@ type Customer struct {
 	MobileNumber   string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	EmailAddress   string       `json:"email_address" bson:"email_address"`
 	Address        Address      `json:"home_address" bson:"home_address"`
-	Gender         string       `json:"gender" bson:"gender"`
+	Gender         Gender       `json:"gender" bson:"gender"`
 	BirthDate      time.Time    `json:"birth_date" bson:"birth_date"`
 	GroceryBasket  []BasketItem `json:"grocery_basket" bson:"grocery_basket"`
 	NearestMartID  string       `json:"nearest_mart_id" bson:"nearest_mart_id"`
@@ -28,7 +28,7 @@ type GroceryItem struct {
 	SellingPrice    float64   `json:"price" bson:"selling_price"`
 	CostPrice       float64   `json:"-" bson:"cost_price"`
 	Quantity        float64   `json:"quantity" bson:"quantity"`
-	Unit            string    `json:"unit" bson:"unit"`
+	Unit            ItemUnit  `json:"unit" bson:"unit"`
 	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity"`
 	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit"`
 	StockQuantity   float64   `json:"-" bson:"stock_quantity"`

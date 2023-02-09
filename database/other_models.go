@@ -38,23 +38,23 @@ type Location struct {
 	Longitude float64 `json:"longitude" binding:"required,numeric"`
 }
 
-// type Gender byte
+type Gender string
 
-// const (
-// 	Male Gender = iota
-// 	Female
-// 	Others
-// )
+const (
+	Male   Gender = "male"
+	Female Gender = "female"
+	Others Gender = "others"
+)
 
-// type ItemUnit byte
+type ItemUnit string
 
-// const (
-// 	Milligram ItemUnit = iota
-// 	Gram
-// 	Kilogram
-// 	Millilitre
-// 	Litre
-// )
+const (
+	Milligram  ItemUnit = "mg"
+	Gram       ItemUnit = "g"
+	Kilogram   ItemUnit = "kg"
+	Millilitre ItemUnit = "ml"
+	Litre      ItemUnit = "l"
+)
 
 // type OrderStatus byte
 

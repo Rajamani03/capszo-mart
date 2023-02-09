@@ -7,11 +7,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (server *Server) updateBasket(ctx *gin.Context) {
-	var request []database.BasketItem
+func (server *Server) updateCustomerAddress(ctx *gin.Context) {
+	var request database.Address
 	var err error
 	db := server.mongoDB.Database("capszo")
 	customerColl := db.Collection("customers")
@@ -32,8 +33,10 @@ func (server *Server) updateBasket(ctx *gin.Context) {
 		return
 	}
 
-	// update grocery basket
-	update := gin.H{"$set": gin.H{"grocery_basket": request}}
+	// update customer address
+	// update := bson.D{{Key: "$set", Value: bson.D{{Key: "home_address", Value: request}}}}
+	update := bson.M{"$set": bson.M{"home_address": request}}
+	// update := gin.H{"$set": gin.H{"home_address": request}}
 	_, err = customerColl.UpdateByID(context.TODO(), objectID, update)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -41,5 +44,5 @@ func (server *Server) updateBasket(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"message": "basket updated successfully"})
+	ctx.JSON(http.StatusAccepted, gin.H{"message": "address updated successfully"})
 }

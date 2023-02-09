@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (server *Server) getAllGroceryItems(ctx *gin.Context) {
+func (server *Server) getAllItems(ctx *gin.Context) {
 	var items []database.GroceryItem
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection("groceries")

@@ -58,9 +58,9 @@ func (server *Server) SetupRouter() {
 
 	// customer authorized routes
 	customerRouter := router.Group("/customer").Use(middleware.CustomerAuthMiddleware(server.token))
-	customerRouter.GET("/items/:mart-id", server.getAllGroceryItems)
-	customerRouter.PUT("/basket", server.updateGroceryBasket)
-	// customerRouter.PUT("/address", server.updateCustomerAddress)
+	customerRouter.GET("/items/:mart-id", server.getAllItems)
+	customerRouter.PUT("/basket", server.updateBasket)
+	customerRouter.PUT("/address", server.updateCustomerAddress)
 	// customerRouter.POST("/grocery-order", server.groceryOrder)
 	// // customerRouter.PUT("/email", server.updateCustomerEmail)
 
