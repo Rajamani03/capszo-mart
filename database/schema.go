@@ -2,6 +2,8 @@ package database
 
 import (
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Customer struct {
@@ -20,49 +22,48 @@ type Customer struct {
 	DeletedAt      time.Time    `json:"-" bson:"deleted_at"`
 }
 
-type GroceryItem struct {
-	MartID          string    `json:"-" bson:"mart_id"`
-	Name            string    `json:"name" bson:"name"`
-	ImageURL        string    `json:"image_url" bson:"image_url"`
-	Mrp             float64   `json:"mrp" bson:"mrp"`
-	SellingPrice    float64   `json:"price" bson:"selling_price"`
-	CostPrice       float64   `json:"-" bson:"cost_price"`
-	Quantity        float64   `json:"quantity" bson:"quantity"`
-	Unit            ItemUnit  `json:"unit" bson:"unit"`
-	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity"`
-	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit"`
-	StockQuantity   float64   `json:"-" bson:"stock_quantity"`
-	Brand           string    `json:"brand" bson:"brand"`
-	Category        string    `json:"category" bson:"category"`
-	SubCategory     string    `json:"sub_category" bson:"sub_category"`
-	OtherNames      []string  `json:"other_names" bson:"other_names"`
-	CreatedAt       time.Time `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
-	DeletedAt       time.Time `json:"-" bson:"deleted_at"`
+type Item struct {
+	ID              primitive.ObjectID `json:"id" bson:"_id"`
+	MartID          string             `json:"-" bson:"mart_id"`
+	Name            string             `json:"name" bson:"name"`
+	ImageURL        string             `json:"image_url" bson:"image_url"`
+	Mrp             float64            `json:"mrp" bson:"mrp"`
+	SellingPrice    float64            `json:"price" bson:"selling_price"`
+	CostPrice       float64            `json:"-" bson:"cost_price"`
+	Quantity        float64            `json:"quantity" bson:"quantity"`
+	Unit            ItemUnit           `json:"unit" bson:"unit"`
+	StepQuantity    float32            `json:"step_quantity" bson:"step_quantity"`
+	IndividualLimit float64            `json:"individual_limit" bson:"individual_limit"`
+	StockQuantity   float64            `json:"-" bson:"stock_quantity"`
+	Brand           string             `json:"brand" bson:"brand"`
+	Category        string             `json:"category" bson:"category"`
+	SubCategory     string             `json:"sub_category" bson:"sub_category"`
+	OtherNames      []string           `json:"other_names" bson:"other_names"`
+	CreatedAt       time.Time          `json:"-" bson:"created_at"`
+	UpdatedAt       time.Time          `json:"-" bson:"updated_at"`
+	DeletedAt       time.Time          `json:"-" bson:"deleted_at"`
 }
 
 type GroceryOrder struct {
-	ID                   uint64    `json:"grocery_order_id" gorm:"column:id;type:BIGINT UNSIGNED NOT NULL;AUTO_INCREMENT;primaryKey"`
-	CustomerID           uint64    `json:"-"`
-	MartID               uint64    `json:"-" gorm:"column:mart_id" binding:"required,numeric"`
-	CustomerMobileNumber string    `json:"customer_mobile_number" binding:"required,numeric"`
-	Items                string    `json:"grocery_items" binding:"required"`
-	ItemsPrivateData     string    `json:"-"`
-	PackagingCharge      float64   `json:"packaging_charge"`
-	DeliveryCharge       float64   `json:"delivery_charge"`
-	Tax                  float64   `json:"tax"`
-	TruckTips            float64   `json:"truck_tips" binding:"required,numeric"`
-	Donation             float64   `json:"donation" binding:"required,numeric"`
-	Discount             float64   `json:"discount"`
-	Total                float64   `json:"total"`
-	OrderedDate          time.Time `json:"ordered_date"`
-	DeliveryAddress      string    `json:"delivery_address" binding:"required"`
-	DeliveryDate         time.Time `json:"delivery_date"`
-	Status               string    `json:"order_status"`
-	Coupon               string    `json:"coupon" binding:"alphanum"`
-	OnlinePayment        string    `json:"online_payment"`
-	TruckID              uint64    `json:"-" gorm:"column:truck_id"`
-	Distance             float32   `json:"-"`
+	CustomerID           string      `json:"-" bson:"customer_id"`
+	MartID               string      `json:"-" bson:"mart_id" gorm:"column:mart_id" binding:"required,numeric"`
+	CustomerMobileNumber string      `json:"customer_mobile_number" bson:"customer_mobile_number" binding:"required,numeric"`
+	Items                []OrderItem `json:"grocery_items" bson:"grocery_items" binding:"required"`
+	PackagingCharge      float64     `json:"packaging_charge" bson:"packaging_charge"`
+	DeliveryCharge       float64     `json:"delivery_charge" bson:"delivery_charge"`
+	Tax                  float64     `json:"tax" bson:"tax"`
+	TruckTips            float64     `json:"truck_tips" bson:"truck_tips" binding:"required,numeric"`
+	Donation             float64     `json:"donation" bson:"donation" binding:"required,numeric"`
+	Discount             float64     `json:"discount" bson:"discount"`
+	Total                float64     `json:"total" bson:"total"`
+	OrderedDate          time.Time   `json:"ordered_date" bson:"ordered_date"`
+	DeliveryAddress      Address     `json:"delivery_address" bson:"delivery_address" binding:"required"`
+	DeliveryDate         time.Time   `json:"delivery_date" bson:"delivery_date"`
+	Status               OrderStatus `json:"order_status" bson:"order_status"`
+	Coupon               string      `json:"coupon" bson:"coupon" binding:"alphanum"`
+	OnlinePayment        string      `json:"online_payment" bson:"online_payment"`
+	TruckID              string      `json:"-" bson:"truck_id" gorm:"column:truck_id"`
+	Distance             float32     `json:"-" bson:"distance"`
 }
 
 type Hauler struct {

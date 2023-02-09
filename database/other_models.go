@@ -17,15 +17,11 @@ type BasketItem struct {
 }
 
 type OrderItem struct {
-	ItemID       uint64  `json:"item_id" binding:"required,numeric"`
-	Quantity     float64 `json:"quantity" binding:"required,numeric"`
-	Mrp          float64 `json:"mrp"`
-	SellingPrice float64 `json:"price"`
-}
-
-type OrderItemPrivateData struct {
-	ItemID    uint64  `json:"item_id"`
-	CostPrice float64 `json:"cost_price"`
+	ItemID       string  `json:"item_id" bson:"item_id" binding:"required,alphanum"`
+	Quantity     float64 `json:"quantity" bson:"quantity" binding:"required,numeric"`
+	Mrp          float64 `json:"mrp" bson:"mrp"`
+	SellingPrice float64 `json:"price" bson:"selling_price"`
+	CostPrice    float64 `json:"-" bson:"cost_price"`
 }
 
 type Rating struct {
@@ -56,18 +52,18 @@ const (
 	Litre      ItemUnit = "l"
 )
 
-// type OrderStatus byte
+type OrderStatus string
 
-// const (
-// 	Confirmed OrderStatus = iota
-// 	Delivered
-// 	Cancelled
-// )
+const (
+	OrderConfirmed OrderStatus = "confirmed"
+	OrderDelivered OrderStatus = "delivered"
+	OrderCancelled OrderStatus = "cancelled"
+)
 
-// type HaulerStatus byte
+type HaulerStatus string
 
-// const (
-// 	Available HaulerStatus = iota
-// 	Delivering
-// 	Off
-// )
+const (
+	HaulerAvailable  HaulerStatus = "available"
+	HaulerDelivering HaulerStatus = "delivering"
+	HaulerOff        HaulerStatus = "off"
+)

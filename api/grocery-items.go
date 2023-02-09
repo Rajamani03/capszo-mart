@@ -10,7 +10,7 @@ import (
 )
 
 func (server *Server) getAllItems(ctx *gin.Context) {
-	var items []database.GroceryItem
+	var items []database.Item
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection("groceries")
 

@@ -61,7 +61,7 @@ func (server *Server) SetupRouter() {
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
 	customerRouter.PUT("/basket", server.updateBasket)
 	customerRouter.PUT("/address", server.updateCustomerAddress)
-	// customerRouter.POST("/grocery-order", server.groceryOrder)
+	customerRouter.POST("/order", server.order)
 	// // customerRouter.PUT("/email", server.updateCustomerEmail)
 
 	// admin routes
