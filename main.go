@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	var server *api.Server
 	var config util.Config
 	var err error
