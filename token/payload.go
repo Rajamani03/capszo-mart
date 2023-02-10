@@ -12,20 +12,20 @@ var (
 	ErrInvalidToken = errors.New("INVALID TOKEN")
 )
 
-type TokenUse byte
+type TokenUse string
 
 const (
-	AccessUse TokenUse = iota + 1
-	RefreshUse
+	AccessUse  TokenUse = "access_token"
+	RefreshUse TokenUse = "refresh_token"
 )
 
-type TokenFor byte
+type TokenFor string
 
 const (
-	AdminAccess TokenFor = iota + 1
-	CustomerAccess
-	HaulerAccess
-	MartAccess
+	AdminAccess    TokenFor = "admins"
+	CustomerAccess TokenFor = "customers"
+	HaulerAccess   TokenFor = "haulers"
+	MartAccess     TokenFor = "marts"
 )
 
 type Payload struct {

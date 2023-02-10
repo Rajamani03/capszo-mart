@@ -19,11 +19,10 @@ type renewTokenRequest struct {
 func (server *Server) renewToken(ctx *gin.Context) {
 	var request renewTokenRequest
 	var user map[string]interface{}
-	var collectionName string
 	var err error
 	db := server.mongoDB.Database("capszo")
 
-	// validate request format
+	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -36,16 +35,8 @@ func (server *Server) renewToken(ctx *gin.Context) {
 		return
 	}
 
-	// identify user to get collection name
-	switch payload.TokenFor {
-	case token.CustomerAccess:
-		collectionName = "customers"
-	case token.HaulerAccess:
-		collectionName = "haulers"
-	case token.MartAccess:
-		collectionName = "marts"
-	}
-	coll := db.Collection(collectionName)
+	// set collection with tokenFor
+	coll := db.Collection(string(payload.TokenFor))
 
 	// convert userID string to objectID
 	objectID, err := primitive.ObjectIDFromHex(payload.UserID)
@@ -81,18 +72,9 @@ func (server *Server) renewToken(ctx *gin.Context) {
 
 func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, err error) {
 	db := server.mongoDB.Database("capszo")
-	var collectionName string
 
-	// identify user to get table name
-	switch tokenFor {
-	case token.CustomerAccess:
-		collectionName = "customers"
-	case token.HaulerAccess:
-		collectionName = "haulers"
-	case token.MartAccess:
-		collectionName = "marts"
-	}
-	coll := db.Collection(collectionName)
+	// set collection with tokenFor
+	coll := db.Collection(string(tokenFor))
 
 	// get access and refresh token duration
 	accessTokenDuration, err := time.ParseDuration(server.config.AccessTokenDuration)
@@ -127,7 +109,7 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 	}
 
 	// store the new refresh tokenID
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "refresh_token_id", Value: payload.ID.String()}}}}
+	update := bson.M{"$set": bson.M{"refresh_token_id": payload.ID.String()}}
 	_, err = coll.UpdateByID(context.TODO(), objectID, update)
 	if err != nil {
 		return
