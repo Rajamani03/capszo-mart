@@ -60,10 +60,26 @@ const (
 	OrderCancelled OrderStatus = "cancelled"
 )
 
+type MartStatus string
+
+const (
+	MartOpen   MartStatus = "open"
+	MartClosed MartStatus = "closed"
+)
+
+type TruckStatus string
+
+const (
+	TruckAvailable   TruckStatus = "available"
+	TruckDelivering  TruckStatus = "delivering"
+	TruckUnavailable TruckStatus = "unavailable"
+)
+
 type HaulerStatus string
 
 const (
 	HaulerAvailable  HaulerStatus = "available"
 	HaulerDelivering HaulerStatus = "delivering"
+	HaulerOnTruck    HaulerStatus = "on_truck"
 	HaulerOff        HaulerStatus = "off"
 )
