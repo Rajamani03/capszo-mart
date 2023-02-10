@@ -51,23 +51,45 @@ func (server *Server) SetupRouter() {
 	// unauthorized routes
 	router.GET("/", server.home)
 	router.POST("/access-token/renew", server.renewToken)
+
+	// customer unauthorized routes
 	router.POST("/customer/signup/get-otp", server.getCustomerSignupOTP)
 	router.POST("/customer/signup", server.customerSignup)
 	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
 	router.POST("/customer/login", server.customerLogin)
 
 	// customer authorized routes
-	customerRouter := router.Group("/").Use(middleware.CustomerAuthMiddleware(server.token))
+	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
+	customerRouter := router.Group("/").Use(authMiddleware)
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
 	customerRouter.POST("/order", server.order)
-	customerRouter.PUT("customer/basket", server.updateBasket)
-	customerRouter.PUT("customer/address", server.updateCustomerAddress)
-	// // customerRouter.PUT("/email", server.updateCustomerEmail)
+	customerRouter.PUT("/customer/basket", server.updateBasket)
+	customerRouter.PUT("/customer/address", server.updateCustomerAddress)
+	// customerRouter.PUT("/email", server.updateCustomerEmail)
+
+	// mart routes
+	authMiddleware = middleware.MartAuthMiddleware(server.token)
+	martRouter := router.Group("/mart")
+	martRouter.POST("/items", server.addItems).Use(authMiddleware)
+	// martRouter.GET("/orders").Use(authMiddleware)
+
+	// truck routes
+	// authMiddleware = middleware.TruckAuthMiddleware(server.token)
+	// truckRouter := router.Group("/truck")
+	// truckRouter.POST("/truck/login/get-otp", server.getCustomerLoginOTP)
+	// truckRouter.POST("/truck/login", server.customerLogin)
+	// truckRouter.PATCH("/order").Use(authMiddleware)
+
+	// mart routes
+	// haulerRouter := router.Group("/hauler")
+	// haulerRouter.POST()
 
 	// admin routes
+	authMiddleware = middleware.AdminAuthMiddleware(server.token)
 	adminRouter := router.Group("/admin")
 	adminRouter.GET("/test-token", server.getTestToken)
-	adminRouter.POST("/items", server.addItems)
+	adminRouter.POST("/items", server.addItems).Use(authMiddleware)
+	// adminRouter.POST("/truck/signup", server.customerSignup)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct

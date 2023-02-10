@@ -24,8 +24,9 @@ type TokenFor string
 const (
 	AdminAccess    TokenFor = "admins"
 	CustomerAccess TokenFor = "customers"
-	HaulerAccess   TokenFor = "haulers"
 	MartAccess     TokenFor = "marts"
+	TruckAccess    TokenFor = "trucks"
+	HaulerAccess   TokenFor = "haulers"
 )
 
 type Payload struct {
