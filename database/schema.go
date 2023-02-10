@@ -79,12 +79,12 @@ type Mart struct {
 
 type Truck struct {
 	ID            interface{} `json:"truck_id" bson:"_id,omitempty"`
+	Name          string      `json:"name" bson:"name"`
 	MobileNumber  string      `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	HaulerIDs     []string    `json:"hauler_ids" bson:"hauler_ids"`
 	Brand         string      `json:"brand" bson:"brand"`
 	Model         string      `json:"model" bson:"model"`
 	VehicleNumber string      `json:"vehicle_number" bson:"vehicle_number"`
-	Name          string      `json:"name" bson:"name"`
 	Status        TruckStatus `json:"truck_status" bson:"truck_status"`
 	CreatedAt     time.Time   `json:"-" bson:"created_at"`
 	UpdatedAt     time.Time   `json:"-" bson:"updated_at"`

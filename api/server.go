@@ -85,11 +85,12 @@ func (server *Server) SetupRouter() {
 	// haulerRouter.POST()
 
 	// admin routes
-	authMiddleware = middleware.AdminAuthMiddleware(server.token)
+	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
 	adminRouter := router.Group("/admin")
 	adminRouter.GET("/test-token", server.getTestToken)
-	adminRouter.POST("/items", server.addItems).Use(authMiddleware)
-	// adminRouter.POST("/truck/signup", server.customerSignup)
+	adminRouter.POST("/mart/signup", server.martSignup)
+	adminRouter.POST("/truck/signup", server.truckSignup)
+	adminRouter.POST("/items", server.addItems)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct
