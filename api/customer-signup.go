@@ -137,5 +137,5 @@ func (server *Server) customerSignup(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusCreated, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_data": customer})
+	ctx.JSON(http.StatusCreated, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": customer})
 }

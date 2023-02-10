@@ -32,3 +32,32 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 	// response
 	ctx.JSON(http.StatusOK, items)
 }
+
+func (server *Server) addItems(ctx *gin.Context) {
+	var request []database.Item
+	var err error
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection("groceries")
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// change the datatype
+	var items []interface{}
+	for _, item := range request {
+		items = append(items, item)
+	}
+
+	// insert all the items
+	result, err := groceriesColl.InsertMany(context.TODO(), items)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusCreated, gin.H{"message": "items added successfully", "item_ids": result.InsertedIDs})
+}

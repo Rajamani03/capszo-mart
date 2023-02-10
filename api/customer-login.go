@@ -137,5 +137,5 @@ func (server *Server) customerLogin(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_data": customer})
+	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": customer})
 }

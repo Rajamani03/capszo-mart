@@ -57,16 +57,17 @@ func (server *Server) SetupRouter() {
 	router.POST("/customer/login", server.customerLogin)
 
 	// customer authorized routes
-	customerRouter := router.Group("/customer").Use(middleware.CustomerAuthMiddleware(server.token))
+	customerRouter := router.Group("/").Use(middleware.CustomerAuthMiddleware(server.token))
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
-	customerRouter.PUT("/basket", server.updateBasket)
-	customerRouter.PUT("/address", server.updateCustomerAddress)
 	customerRouter.POST("/order", server.order)
+	customerRouter.PUT("customer/basket", server.updateBasket)
+	customerRouter.PUT("customer/address", server.updateCustomerAddress)
 	// // customerRouter.PUT("/email", server.updateCustomerEmail)
 
 	// admin routes
 	adminRouter := router.Group("/admin")
 	adminRouter.GET("/test-token", server.getTestToken)
+	adminRouter.POST("/items", server.addItems)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct
