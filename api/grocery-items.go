@@ -2,6 +2,7 @@ package api
 
 import (
 	"capszo-mart/database"
+	"capszo-mart/token"
 	"context"
 	"net/http"
 
@@ -39,6 +40,9 @@ func (server *Server) addItems(ctx *gin.Context) {
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection("groceries")
 
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -48,6 +52,9 @@ func (server *Server) addItems(ctx *gin.Context) {
 	// change the datatype
 	var items []interface{}
 	for _, item := range request {
+		if tokenPayload.TokenFor == token.MartAccess {
+			item.MartID = tokenPayload.UserID
+		}
 		items = append(items, item)
 	}
 

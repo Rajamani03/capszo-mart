@@ -175,15 +175,99 @@ func (server *Server) order(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"order_info": order})
 }
 
-// func getQuantityGrams(unit string, quantity float64) float64 {
-// 	switch unit {
-// 	case "mg":
-// 		return quantity * 0.001
-// 	case "kg":
-// 		return quantity * 1000
-// 	case "l":
-// 		return quantity * 1000
-// 	default:
-// 		return quantity
-// 	}
-// }
+type getOrderRequest struct {
+	MartID               string `json:"mart_id"`
+	TruckID              string `json:"truck_id"`
+	CustomerMobileNumber string `json:"customer_mobile_number"`
+	OrderedDate          string `json:"ordered_date"`
+	Status               string `json:"order_status"`
+}
+
+func (server *Server) getOrders(ctx *gin.Context) {
+	var request getOrderRequest
+	var orders []database.Order
+	var err error
+	db := server.mongoDB.Database("capszo")
+	orderColl := db.Collection("mart_orders")
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// set the filter wrt request
+	var filter = make(primitive.M)
+	if request.MartID != "" {
+		filter["mart_id"] = request.MartID
+	}
+	if request.TruckID != "" {
+		filter["truck_id"] = request.TruckID
+	}
+	if request.CustomerMobileNumber != "" {
+		filter["customer_mobile_number"] = request.CustomerMobileNumber
+	}
+	if request.OrderedDate != "" {
+		orderedDate, err := time.Parse("2006-01-02", request.OrderedDate)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		dateFilter := bson.M{"$gt": primitive.NewDateTimeFromTime(orderedDate.AddDate(0, 0, -1)), "$lt": primitive.NewDateTimeFromTime(orderedDate.AddDate(0, 0, 1))}
+		filter["ordered_date"] = dateFilter
+	}
+	if request.Status != "" {
+		filter["status"] = request.Status
+	}
+
+	// filter by user id
+	switch tokenPayload.TokenFor {
+	case token.CustomerAccess:
+		filter["customer_id"] = tokenPayload.UserID
+	case token.MartAccess:
+		filter["mart_id"] = tokenPayload.UserID
+	case token.TruckAccess:
+		filter["truck_id"] = tokenPayload.UserID
+	}
+
+	// find order by filters
+	cursor, err := orderColl.Find(context.TODO(), filter)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if err = cursor.All(context.TODO(), &orders); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, gin.H{"order_info": orders})
+}
+
+func (server *Server) getOrder(ctx *gin.Context) {
+	var order database.Order
+	db := server.mongoDB.Database("capszo")
+	orderColl := db.Collection("mart_orders")
+
+	// get mart_id from params
+	martID := ctx.Param("id")
+
+	// get order using _id
+	objectID, err := primitive.ObjectIDFromHex(martID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	filter := bson.M{"_id": objectID}
+	if err = orderColl.FindOne(context.TODO(), filter).Decode(&order); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, gin.H{"order_info": order})
+}

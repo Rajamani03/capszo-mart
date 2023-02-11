@@ -62,6 +62,8 @@ func (server *Server) SetupRouter() {
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
 	customerRouter := router.Group("/").Use(authMiddleware)
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
+	customerRouter.GET("/orders", server.getOrders)
+	customerRouter.GET("/order/:id", server.getOrder)
 	customerRouter.POST("/order", server.order)
 	customerRouter.PUT("/customer/basket", server.updateBasket)
 	customerRouter.PUT("/customer/address", server.updateCustomerAddress)
@@ -70,8 +72,8 @@ func (server *Server) SetupRouter() {
 	// mart routes
 	authMiddleware = middleware.MartAuthMiddleware(server.token)
 	martRouter := router.Group("/mart")
-	martRouter.POST("/items", server.addItems).Use(authMiddleware)
-	// martRouter.GET("/orders").Use(authMiddleware)
+	martRouter.POST("/items", server.addItems)
+	martRouter.GET("/orders", server.getOrders)
 
 	// truck routes
 	// authMiddleware = middleware.TruckAuthMiddleware(server.token)
@@ -88,6 +90,8 @@ func (server *Server) SetupRouter() {
 	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
 	adminRouter := router.Group("/admin")
 	adminRouter.GET("/test-token", server.getTestToken)
+	adminRouter.GET("/order/:id", server.getOrder)
+	adminRouter.GET("/orders", server.getOrders)
 	adminRouter.POST("/mart/signup", server.martSignup)
 	adminRouter.POST("/truck/signup", server.truckSignup)
 	adminRouter.POST("/items", server.addItems)

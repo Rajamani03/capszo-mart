@@ -57,7 +57,7 @@ type Order struct {
 	OrderedDate          time.Time   `json:"ordered_date" bson:"ordered_date"`
 	DeliveryAddress      Address     `json:"delivery_address" bson:"delivery_address" binding:"required"`
 	DeliveryDate         time.Time   `json:"delivery_date" bson:"delivery_date"`
-	Status               OrderStatus `json:"order_status" bson:"order_status"`
+	Status               OrderStatus `json:"order_status" bson:"status"`
 	Coupon               string      `json:"coupon" bson:"coupon" binding:"alphanum"`
 	OnlinePayment        string      `json:"online_payment" bson:"online_payment"`
 	TruckID              string      `json:"-" bson:"truck_id" gorm:"column:truck_id"`
@@ -85,7 +85,7 @@ type Truck struct {
 	Brand         string      `json:"brand" bson:"brand"`
 	Model         string      `json:"model" bson:"model"`
 	VehicleNumber string      `json:"vehicle_number" bson:"vehicle_number"`
-	Status        TruckStatus `json:"truck_status" bson:"truck_status"`
+	Status        TruckStatus `json:"truck_status" bson:"status"`
 	CreatedAt     time.Time   `json:"-" bson:"created_at"`
 	UpdatedAt     time.Time   `json:"-" bson:"updated_at"`
 }
