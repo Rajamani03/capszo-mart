@@ -119,8 +119,22 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 }
 
 func (server *Server) getTestToken(ctx *gin.Context) {
-	// get access and refresh token
-	accessToken, refreshToken, err := server.getAuthTokens("63e1401906664782469c126d", token.CustomerAccess)
+	// get access token
+	cat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.CustomerAccess)
+	if err != nil {
+		err = errors.New("TOKEN QUERY ERROR")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	mat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.MartAccess)
+	if err != nil {
+		err = errors.New("TOKEN QUERY ERROR")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	tat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.TruckAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -128,5 +142,5 @@ func (server *Server) getTestToken(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
+	ctx.JSON(http.StatusOK, gin.H{"access_tokens": bson.A{cat, mat, tat}})
 }

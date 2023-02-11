@@ -76,13 +76,13 @@ func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"validate_key": getID(result.InsertedID)})
 }
 
-type LoginRequest struct {
+type loginRequest struct {
 	ValidateKey string `json:"validate_key" binding:"required"`
 	OTP         string `json:"otp" binding:"required,numeric,len=6"`
 }
 
 func (server *Server) customerSignup(ctx *gin.Context) {
-	var request LoginRequest
+	var request loginRequest
 	var signupInfo signupOTPRequest
 	var customer database.Customer
 	var err error

@@ -12,23 +12,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type loginOTPRequest struct {
-	UserID       string    `json:"user_id" bson:"user_id"`
-	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	OTP          string    `json:"otp" bson:"otp"`
-	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
-}
-
-func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
+func (server *Server) getMartLoginOTP(ctx *gin.Context) {
 	var request loginOTPRequest
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	customerColl := db.Collection("customers")
+	martColl := db.Collection("marts")
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -37,31 +28,20 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 	}
 
 	// check if mobile number exists
-	var customer map[string]interface{}
-	filter := bson.D{{Key: "mobile_number", Value: request.MobileNumber}}
-	err = customerColl.FindOne(context.TODO(), filter).Decode(&customer)
+	var user map[string]interface{}
+	filter := bson.M{"mobile_number": request.MobileNumber}
+	err = martColl.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
 		err = errors.New("USER NOT FOUND")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	request.UserID = getID(customer["_id"])
+	request.UserID = getID(user["_id"])
 
 	// generate otp
 	// otp := util.GetOTP(6)
 	otp := "654321"
 	request.OTP = util.Hash(otp + server.config.Salt)
-
-	// TTL index
-	model := mongo.IndexModel{
-		Keys:    bson.M{"created_at": 1},
-		Options: options.Index().SetExpireAfterSeconds(60),
-	}
-	_, err = loginInfoColl.Indexes().CreateOne(ctx, model)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
 
 	// store the login data to login_info collection
 	request.CreatedAt = time.Now()
@@ -75,14 +55,14 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"validate_key": getID(result.InsertedID)})
 }
 
-func (server *Server) customerLogin(ctx *gin.Context) {
+func (server *Server) martLogin(ctx *gin.Context) {
 	var request loginRequest
 	var loginInfo loginOTPRequest
-	var customer database.Customer
+	var mart database.Mart
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	customerColl := db.Collection("customers")
+	martColl := db.Collection("marts")
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -98,9 +78,8 @@ func (server *Server) customerLogin(ctx *gin.Context) {
 	}
 
 	// get login info
-	filter := bson.D{{Key: "_id", Value: objectID}}
-	err = loginInfoColl.FindOne(context.TODO(), filter).Decode(&loginInfo)
-	if err != nil {
+	filter := bson.M{"_id": objectID}
+	if err = loginInfoColl.FindOne(context.TODO(), filter).Decode(&loginInfo); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -120,16 +99,15 @@ func (server *Server) customerLogin(ctx *gin.Context) {
 		return
 	}
 
-	// get customer info
-	filter = bson.D{{Key: "_id", Value: objectID}}
-	err = customerColl.FindOne(context.TODO(), filter).Decode(&customer)
-	if err != nil {
+	// get mart info
+	filter = bson.M{"_id": objectID}
+	if err = martColl.FindOne(context.TODO(), filter).Decode(&mart); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	// get access and refresh token
-	accessToken, refreshToken, err := server.getAuthTokens(loginInfo.UserID, token.CustomerAccess)
+	accessToken, refreshToken, err := server.getAuthTokens(loginInfo.UserID, token.MartAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -137,5 +115,5 @@ func (server *Server) customerLogin(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": customer})
+	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": mart})
 }

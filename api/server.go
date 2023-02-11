@@ -48,43 +48,40 @@ func NewServer(mongoDB *mongo.Client, config util.Config) (*Server, error) {
 func (server *Server) SetupRouter() {
 	var router *gin.Engine = gin.Default()
 
-	// unauthorized routes
+	// general routes
 	router.GET("/", server.home)
 	router.POST("/access-token/renew", server.renewToken)
 
-	// customer unauthorized routes
+	// customer routes
 	router.POST("/customer/signup/get-otp", server.getCustomerSignupOTP)
 	router.POST("/customer/signup", server.customerSignup)
 	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
 	router.POST("/customer/login", server.customerLogin)
-
-	// customer authorized routes
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
 	customerRouter := router.Group("/").Use(authMiddleware)
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
-	customerRouter.GET("/orders", server.getOrders)
 	customerRouter.GET("/order/:id", server.getOrder)
+	customerRouter.GET("customer/orders", server.getOrders)
 	customerRouter.POST("/order", server.order)
-	customerRouter.PUT("/customer/basket", server.updateBasket)
-	customerRouter.PUT("/customer/address", server.updateCustomerAddress)
+	customerRouter.PATCH("/customer/basket", server.updateBasket)
+	customerRouter.PATCH("/customer/address", server.updateCustomerAddress)
 	// customerRouter.PUT("/email", server.updateCustomerEmail)
 
 	// mart routes
+	router.POST("/mart/login/get-otp", server.getMartLoginOTP)
+	router.POST("/mart/login", server.martLogin)
 	authMiddleware = middleware.MartAuthMiddleware(server.token)
-	martRouter := router.Group("/mart")
+	martRouter := router.Group("/mart").Use(authMiddleware)
 	martRouter.POST("/items", server.addItems)
 	martRouter.GET("/orders", server.getOrders)
 
 	// truck routes
-	// authMiddleware = middleware.TruckAuthMiddleware(server.token)
-	// truckRouter := router.Group("/truck")
-	// truckRouter.POST("/truck/login/get-otp", server.getCustomerLoginOTP)
-	// truckRouter.POST("/truck/login", server.customerLogin)
-	// truckRouter.PATCH("/order").Use(authMiddleware)
-
-	// mart routes
-	// haulerRouter := router.Group("/hauler")
-	// haulerRouter.POST()
+	router.POST("/truck/login/get-otp", server.getTruckLoginOTP)
+	router.POST("/truck/login", server.truckLogin)
+	authMiddleware = middleware.TruckAuthMiddleware(server.token)
+	truckRouter := router.Group("/truck").Use(authMiddleware)
+	truckRouter.GET("/orders", server.getOrders)
+	// truckRouter.PATCH("/order")
 
 	// admin routes
 	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
