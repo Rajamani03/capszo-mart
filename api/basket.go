@@ -14,7 +14,7 @@ func (server *Server) updateBasket(ctx *gin.Context) {
 	var request []database.BasketItem
 	var err error
 	db := server.mongoDB.Database("capszo")
-	customerColl := db.Collection("customers")
+	customerColl := db.Collection(string(database.CustomerColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)

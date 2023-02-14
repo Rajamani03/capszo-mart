@@ -14,7 +14,7 @@ func (server *Server) martSignup(ctx *gin.Context) {
 	var request database.Mart
 	var err error
 	db := server.mongoDB.Database("capszo")
-	martColl := db.Collection("marts")
+	martColl := db.Collection(string(database.MartColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {

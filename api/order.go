@@ -31,10 +31,10 @@ func (server *Server) order(ctx *gin.Context) {
 	var order database.Order
 	var err error
 	db := server.mongoDB.Database("capszo")
-	groceryColl := db.Collection("groceries")
-	customerColl := db.Collection("customers")
-	martColl := db.Collection("marts")
-	orderColl := db.Collection("mart_orders")
+	groceryColl := db.Collection(string(database.GroceryColl))
+	customerColl := db.Collection(string(database.CustomerColl))
+	martColl := db.Collection(string(database.MartColl))
+	orderColl := db.Collection(string(database.OrderColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
@@ -188,7 +188,7 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	var orders []database.Order
 	var err error
 	db := server.mongoDB.Database("capszo")
-	orderColl := db.Collection("mart_orders")
+	orderColl := db.Collection(string(database.OrderColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
@@ -251,7 +251,7 @@ func (server *Server) getOrders(ctx *gin.Context) {
 func (server *Server) getOrder(ctx *gin.Context) {
 	var order database.Order
 	db := server.mongoDB.Database("capszo")
-	orderColl := db.Collection("mart_orders")
+	orderColl := db.Collection(string(database.OrderColl))
 
 	// get mart_id from params
 	martID := ctx.Param("id")

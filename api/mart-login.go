@@ -19,7 +19,7 @@ func (server *Server) getMartLoginOTP(ctx *gin.Context) {
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	martColl := db.Collection("marts")
+	martColl := db.Collection(string(database.MartColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -62,7 +62,7 @@ func (server *Server) martLogin(ctx *gin.Context) {
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	martColl := db.Collection("marts")
+	martColl := db.Collection(string(database.MartColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {

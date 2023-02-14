@@ -14,7 +14,7 @@ func (server *Server) truckSignup(ctx *gin.Context) {
 	var request database.Truck
 	var err error
 	db := server.mongoDB.Database("capszo")
-	truckColl := db.Collection("truck")
+	truckColl := db.Collection(string(database.TruckColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {

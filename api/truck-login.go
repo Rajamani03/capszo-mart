@@ -19,7 +19,7 @@ func (server *Server) getTruckLoginOTP(ctx *gin.Context) {
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	truckColl := db.Collection("trucks")
+	truckColl := db.Collection(string(database.TruckColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -62,7 +62,7 @@ func (server *Server) truckLogin(ctx *gin.Context) {
 	var err error
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
-	truckColl := db.Collection("trucks")
+	truckColl := db.Collection(string(database.TruckColl))
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {

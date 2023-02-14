@@ -4,6 +4,17 @@ import (
 	"time"
 )
 
+type Collections string
+
+const (
+	CustomerColl Collections = "customers"
+	GroceryColl  Collections = "groceries"
+	OrderColl    Collections = "mart_orders"
+	MartColl     Collections = "marts"
+	TruckColl    Collections = "trucks"
+	HaulerColl   Collections = "haulers"
+)
+
 type Customer struct {
 	ID             interface{}  `json:"-" bson:"_id,omitempty"`
 	Name           string       `json:"name" bson:"name" binding:"required,alpha"`

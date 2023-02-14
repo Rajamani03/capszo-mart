@@ -13,7 +13,7 @@ import (
 func (server *Server) getAllItems(ctx *gin.Context) {
 	var items []database.Item
 	db := server.mongoDB.Database("capszo")
-	groceriesColl := db.Collection("groceries")
+	groceriesColl := db.Collection(string(database.GroceryColl))
 
 	// get mart_id from params
 	martID := ctx.Param("mart-id")
@@ -38,7 +38,7 @@ func (server *Server) addItems(ctx *gin.Context) {
 	var request []database.Item
 	var err error
 	db := server.mongoDB.Database("capszo")
-	groceriesColl := db.Collection("groceries")
+	groceriesColl := db.Collection(string(database.GroceryColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)

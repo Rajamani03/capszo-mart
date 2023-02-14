@@ -15,7 +15,7 @@ func (server *Server) updateCustomerAddress(ctx *gin.Context) {
 	var request database.Address
 	var err error
 	db := server.mongoDB.Database("capszo")
-	customerColl := db.Collection("customers")
+	customerColl := db.Collection(string(database.CustomerColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
