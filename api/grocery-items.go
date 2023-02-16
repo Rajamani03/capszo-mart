@@ -4,10 +4,13 @@ import (
 	"capszo-mart/database"
 	"capszo-mart/token"
 	"context"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (server *Server) getAllItems(ctx *gin.Context) {
@@ -19,7 +22,7 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 	martID := ctx.Param("mart-id")
 
 	// get all grocery items from groceries collections
-	filter := bson.D{{Key: "mart_id", Value: martID}}
+	filter := bson.M{"mart_id": martID}
 	cursor, err := groceriesColl.Find(context.TODO(), filter)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -35,7 +38,7 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 }
 
 func (server *Server) addItems(ctx *gin.Context) {
-	var request []database.Item
+	var request []itemInfo
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -67,4 +70,67 @@ func (server *Server) addItems(ctx *gin.Context) {
 
 	// response
 	ctx.JSON(http.StatusCreated, gin.H{"message": "items added successfully", "item_ids": result.InsertedIDs})
+}
+
+type itemInfo struct {
+	ID              string    `json:"item_id" bson:"_id,omitempty" binding:"required,alphanum"`
+	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
+	Name            string    `json:"name" bson:"name,omitempty"`
+	ImageURL        string    `json:"image_url" bson:"image_url,omitempty"`
+	Mrp             float64   `json:"mrp" bson:"mrp,omitempty"`
+	SellingPrice    float64   `json:"selling_price" bson:"selling_price,omitempty"`
+	CostPrice       float64   `json:"cost_price" bson:"cost_price,omitempty"`
+	Quantity        float64   `json:"quantity" bson:"quantity,omitempty"`
+	Unit            string    `json:"unit" bson:"unit,omitempty"`
+	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity,omitempty"`
+	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit,omitempty"`
+	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity,omitempty"`
+	Brand           string    `json:"brand" bson:"brand,omitempty"`
+	Category        string    `json:"category" bson:"category,omitempty"`
+	SubCategory     string    `json:"sub_category" bson:"sub_category,omitempty"`
+	OtherNames      []string  `json:"other_names" bson:"other_names,omitempty"`
+	CreatedAt       time.Time `json:"-" bson:"created_at"`
+	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
+}
+
+func (server *Server) updateItem(ctx *gin.Context) {
+	var request itemInfo
+	var err error
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection(string(database.GroceryColl))
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// convert itemID string to objectID
+	objectID, err := primitive.ObjectIDFromHex(request.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	filter := bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
+	if tokenPayload.TokenFor == token.AdminAccess {
+		filter = bson.M{"_id": objectID}
+	}
+
+	// update grocery items
+	fmt.Printf("filter: %v\n", filter)
+	request.UpdatedAt = time.Now()
+	update := bson.M{"$set": request}
+	result, err := groceriesColl.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	fmt.Printf("result.MatchedCount: %v\n", result.MatchedCount)
+
+	// response
+	ctx.JSON(http.StatusCreated, gin.H{"message": "items updated successfully", "item_id": result.UpsertedID})
 }

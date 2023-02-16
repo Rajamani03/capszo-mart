@@ -1,6 +1,7 @@
 package api
 
 import (
+	"capszo-mart/database"
 	"capszo-mart/token"
 	"context"
 	"errors"
@@ -119,22 +120,44 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 }
 
 func (server *Server) getTestToken(ctx *gin.Context) {
+	var customer database.Customer
+	var mart database.Mart
+	var truck database.Truck
+	var err error
+	db := server.mongoDB.Database("capszo")
+	customerColl := db.Collection(string(database.CustomerColl))
+	martColl := db.Collection(string(database.MartColl))
+	truckColl := db.Collection(string(database.TruckColl))
+
+	if err = customerColl.FindOne(context.TODO(), bson.M{}).Decode(&customer); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if err = martColl.FindOne(context.TODO(), bson.M{}).Decode(&mart); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if err = truckColl.FindOne(context.TODO(), bson.M{}).Decode(&truck); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	// get access token
-	cat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.CustomerAccess)
+	cat, _, err := server.getAuthTokens(getID(customer.ID), token.CustomerAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	mat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.MartAccess)
+	mat, _, err := server.getAuthTokens(getID(mart.ID), token.MartAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	tat, _, err := server.getAuthTokens("63e1401906664782469c126d", token.TruckAccess)
+	tat, _, err := server.getAuthTokens(getID(truck.ID), token.TruckAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

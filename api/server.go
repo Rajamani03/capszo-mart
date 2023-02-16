@@ -73,6 +73,7 @@ func (server *Server) SetupRouter() {
 	authMiddleware = middleware.MartAuthMiddleware(server.token)
 	martRouter := router.Group("/mart").Use(authMiddleware)
 	martRouter.POST("/items", server.addItems)
+	martRouter.PATCH("item", server.updateItem)
 	martRouter.GET("/orders", server.getOrders)
 
 	// truck routes
@@ -92,6 +93,7 @@ func (server *Server) SetupRouter() {
 	adminRouter.POST("/mart/signup", server.martSignup)
 	adminRouter.POST("/truck/signup", server.truckSignup)
 	adminRouter.POST("/items", server.addItems)
+	adminRouter.PATCH("item", server.updateItem)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct

@@ -55,7 +55,7 @@ type Item struct {
 type Order struct {
 	ID                   interface{} `json:"order_id" bson:"_id,omitempty"`
 	CustomerID           string      `json:"-" bson:"customer_id"`
-	MartID               string      `json:"-" bson:"mart_id" gorm:"column:mart_id" binding:"required,numeric"`
+	MartID               string      `json:"mart_id" bson:"mart_id" gorm:"column:mart_id" binding:"required,numeric"`
 	CustomerMobileNumber string      `json:"customer_mobile_number" bson:"customer_mobile_number" binding:"required,numeric"`
 	Items                []OrderItem `json:"grocery_items" bson:"grocery_items" binding:"required"`
 	PackagingCharge      float64     `json:"packaging_charge" bson:"packaging_charge"`
@@ -70,6 +70,7 @@ type Order struct {
 	DeliveryDate         time.Time   `json:"delivery_date" bson:"delivery_date"`
 	Status               OrderStatus `json:"order_status" bson:"status"`
 	Coupon               string      `json:"coupon" bson:"coupon" binding:"alphanum"`
+	OTP                  string      `json:"otp" bson:"otp" binding:"required,numeric,len=4"`
 	OnlinePayment        string      `json:"online_payment" bson:"online_payment"`
 	TruckID              string      `json:"-" bson:"truck_id" gorm:"column:truck_id"`
 	Distance             float32     `json:"-" bson:"distance"`
