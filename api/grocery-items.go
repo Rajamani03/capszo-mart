@@ -58,6 +58,8 @@ func (server *Server) addItems(ctx *gin.Context) {
 		if tokenPayload.TokenFor == token.MartAccess {
 			item.MartID = tokenPayload.UserID
 		}
+		item.CreatedAt = time.Now()
+		item.UpdatedAt = time.Now()
 		items = append(items, item)
 	}
 
@@ -73,7 +75,7 @@ func (server *Server) addItems(ctx *gin.Context) {
 }
 
 type itemInfo struct {
-	ID              string    `json:"item_id" bson:"_id,omitempty" binding:"required,alphanum"`
+	ID              string    `json:"item_id" bson:"_id,omitempty"`
 	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
 	Name            string    `json:"name" bson:"name,omitempty"`
 	ImageURL        string    `json:"image_url" bson:"image_url,omitempty"`
@@ -89,8 +91,8 @@ type itemInfo struct {
 	Category        string    `json:"category" bson:"category,omitempty"`
 	SubCategory     string    `json:"sub_category" bson:"sub_category,omitempty"`
 	OtherNames      []string  `json:"other_names" bson:"other_names,omitempty"`
-	CreatedAt       time.Time `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
+	CreatedAt       time.Time `json:"-" bson:"created_at,omitempty"`
+	UpdatedAt       time.Time `json:"-" bson:"updated_at,omitempty"`
 }
 
 func (server *Server) updateItem(ctx *gin.Context) {

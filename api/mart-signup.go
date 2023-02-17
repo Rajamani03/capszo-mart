@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,6 +37,7 @@ func (server *Server) martSignup(ctx *gin.Context) {
 	}
 
 	// store mart data in db
+	request.CreatedAt = time.Now()
 	result, err := martColl.InsertOne(context.TODO(), request)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
