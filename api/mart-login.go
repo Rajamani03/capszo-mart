@@ -106,14 +106,14 @@ func (server *Server) martLogin(ctx *gin.Context) {
 		return
 	}
 
-	// get access and refresh token
-	accessToken, refreshToken, err := server.getAuthTokens(loginInfo.UserID, token.MartAccess)
+	// create session and get access and refresh token
+	sessionID, accessToken, refreshToken, err := server.createSession(loginInfo.UserID, token.MartAccess)
 	if err != nil {
-		err = errors.New("TOKEN QUERY ERROR")
+		err = errors.New("SESSION ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": mart})
+	ctx.JSON(http.StatusOK, gin.H{"session_id": sessionID, "access_token": accessToken, "refresh_token": refreshToken, "user_info": mart})
 }
