@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type signupOTPRequest struct {
@@ -53,16 +55,15 @@ func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
 	request.OTP = util.Hash(otp + server.config.Salt)
 
 	// TTL index
-	// model := mongo.IndexModel{
-	// 	Keys:    bson.M{"created_at": 1},
-	// 	Options: options.Index().SetExpireAfterSeconds(60),
-	// }
-	// ind, err := signupInfoColl.Indexes().CreateOne(ctx, model)
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
-	// fmt.Printf("ind: %v\n", ind)
+	model := mongo.IndexModel{
+		Keys:    bson.M{"created_at": 1},
+		Options: options.Index().SetExpireAfterSeconds(60),
+	}
+	_, err = signupInfoColl.Indexes().CreateOne(ctx, model)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
 	// store the signup data to signup_info collection
 	request.CreatedAt = time.Now()
@@ -129,14 +130,14 @@ func (server *Server) customerSignup(ctx *gin.Context) {
 		return
 	}
 
-	// get access and refresh token
-	accessToken, refreshToken, err := server.getAuthTokens(getID(result.InsertedID), token.CustomerAccess)
+	// create session and get access and refresh token
+	sessionID, accessToken, refreshToken, err := server.createSession(getID(result.InsertedID), token.CustomerAccess)
 	if err != nil {
-		err = errors.New("TOKEN QUERY ERROR")
+		err = errors.New("SESSION ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	// response
-	ctx.JSON(http.StatusCreated, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user_info": customer})
+	ctx.JSON(http.StatusCreated, gin.H{"session_id": sessionID, "access_token": accessToken, "refresh_token": refreshToken, "user_info": customer})
 }

@@ -18,19 +18,18 @@ const (
 )
 
 type Customer struct {
-	ID             interface{}  `json:"-" bson:"_id,omitempty"`
-	Name           string       `json:"name" bson:"name" binding:"required,alpha"`
-	MobileNumber   string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	EmailAddress   string       `json:"email_address" bson:"email_address"`
-	Address        Address      `json:"home_address" bson:"home_address"`
-	Gender         Gender       `json:"gender" bson:"gender"`
-	BirthDate      time.Time    `json:"birth_date" bson:"birth_date"`
-	GroceryBasket  []BasketItem `json:"grocery_basket" bson:"grocery_basket"`
-	NearestMartID  string       `json:"nearest_mart_id" bson:"nearest_mart_id"`
-	Wishlist       []string     `json:"wishlist" bson:"wishlist"`
-	RefreshTokenID string       `json:"-" bson:"refresh_token_id"`
-	CreatedAt      time.Time    `json:"-" bson:"created_at"`
-	UpdatedAt      time.Time    `json:"-" bson:"updated_at"`
+	ID            interface{}  `json:"-" bson:"_id,omitempty"`
+	Name          string       `json:"name" bson:"name" binding:"required,alpha"`
+	MobileNumber  string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
+	EmailAddress  string       `json:"email_address" bson:"email_address"`
+	Address       Address      `json:"home_address" bson:"home_address"`
+	Gender        Gender       `json:"gender" bson:"gender"`
+	BirthDate     time.Time    `json:"birth_date" bson:"birth_date"`
+	GroceryBasket []BasketItem `json:"grocery_basket" bson:"grocery_basket"`
+	NearestMartID string       `json:"nearest_mart_id" bson:"nearest_mart_id"`
+	Wishlist      []string     `json:"wishlist" bson:"wishlist"`
+	CreatedAt     time.Time    `json:"-" bson:"created_at"`
+	UpdatedAt     time.Time    `json:"-" bson:"updated_at"`
 }
 
 type Item struct {
@@ -86,7 +85,6 @@ type Mart struct {
 	Status          MartStatus  `json:"mart_status" bson:"status"`
 	PackagingCharge float64     `json:"packaging_charge" bson:"packaging_charge"`
 	DeliveryCharge  float64     `json:"delivery_charge" bson:"delivery_charge"`
-	RefreshTokenID  string      `json:"-" bson:"refresh_token_id"`
 	CreatedAt       time.Time   `json:"-" bson:"created_at"`
 	UpdatedAt       time.Time   `json:"-" bson:"updated_at"`
 }
@@ -105,16 +103,15 @@ type Truck struct {
 }
 
 type Hauler struct {
-	ID             interface{}  `json:"hauler_id" bson:"_id,omitempty"`
-	Name           string       `json:"name" binding:"required,alpha"`
-	MobileNumber   string       `json:"mobile_number" binding:"required,numeric,len=10"`
-	Gender         string       `json:"gender"`
-	Rating         string       `json:"rating"`
-	Location       string       `json:"hauler_location"`
-	Status         HaulerStatus `json:"hauler_status"`
-	RefreshTokenID string       `json:"-" gorm:"column:refresh_token_id"`
-	CreatedAt      time.Time    `json:"-" bson:"created_at"`
-	UpdatedAt      time.Time    `json:"-" bson:"updated_at"`
+	ID           interface{}  `json:"hauler_id" bson:"_id,omitempty"`
+	Name         string       `json:"name" binding:"required,alpha"`
+	MobileNumber string       `json:"mobile_number" binding:"required,numeric,len=10"`
+	Gender       string       `json:"gender"`
+	Rating       string       `json:"rating"`
+	Location     string       `json:"hauler_location"`
+	Status       HaulerStatus `json:"hauler_status"`
+	CreatedAt    time.Time    `json:"-" bson:"created_at"`
+	UpdatedAt    time.Time    `json:"-" bson:"updated_at"`
 }
 
 type Session struct {

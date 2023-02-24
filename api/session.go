@@ -11,6 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type renewTokenRequest struct {
@@ -84,10 +86,20 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 	return
 }
 
-func (server *Server) createSession(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, sessionID string, err error) {
+func (server *Server) createSession(userID string, tokenFor token.TokenFor) (sessionID string, accessToken string, refreshToken string, err error) {
 	var session database.Session
 	db := server.mongoDB.Database("capszo")
 	sessionColl := db.Collection(string(database.SessionColl))
+
+	// create TTL index
+	model := mongo.IndexModel{
+		Keys:    bson.M{"last_renewed": 1},
+		Options: options.Index().SetExpireAfterSeconds(2592000),
+	}
+	_, err = sessionColl.Indexes().CreateOne(context.TODO(), model)
+	if err != nil {
+		return
+	}
 
 	// get auth tokens
 	accessToken, refreshToken, payload, err := server.getAuthTokens(userID, tokenFor)
