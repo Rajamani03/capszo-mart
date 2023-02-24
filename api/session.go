@@ -14,14 +14,13 @@ import (
 )
 
 type renewTokenRequest struct {
+	SessionID    string `json:"session_id" binding:"required"`
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
 func (server *Server) renewToken(ctx *gin.Context) {
 	var request renewTokenRequest
-	var user map[string]interface{}
 	var err error
-	db := server.mongoDB.Database("capszo")
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -30,39 +29,23 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	}
 
 	// verify refresh token
-	payload, err := server.token.VerifyToken(request.RefreshToken)
+	tokenPayload, err := server.token.VerifyToken(request.RefreshToken)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
 
-	// set collection with tokenFor
-	coll := db.Collection(string(payload.TokenFor))
-
-	// convert userID string to objectID
-	objectID, err := primitive.ObjectIDFromHex(payload.UserID)
+	// convert sessionID string to objectID
+	objectID, err := primitive.ObjectIDFromHex(request.SessionID)
 	if err != nil {
+		err = errors.New("INVALID SESSION ID")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	// get the refresh tokenID
-	filter := bson.D{{Key: "_id", Value: objectID}}
-	err = coll.FindOne(context.TODO(), filter).Decode(&user)
+	// update session
+	accessToken, refreshToken, err := server.updateSession(objectID, tokenPayload)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(errors.New("TOKEN QUERY ERROR")))
-		return
-	}
-
-	// check if both request tokenID matches
-	if user["refresh_token_id"] != payload.ID.String() {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(errors.New("TOKEN REUSED OR COMPROMISED")))
-		return
-	}
-
-	// get access and refresh token
-	accessToken, refreshToken, err := server.getAuthTokens(payload.UserID, payload.TokenFor)
-	if err != nil {
-		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -71,12 +54,7 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
 }
 
-func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, err error) {
-	db := server.mongoDB.Database("capszo")
-
-	// set collection with tokenFor
-	coll := db.Collection(string(tokenFor))
-
+func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, tokenPayload *token.Payload, err error) {
 	// get access and refresh token duration
 	accessTokenDuration, err := time.ParseDuration(server.config.AccessTokenDuration)
 	if err != nil {
@@ -98,21 +76,65 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 	}
 
 	// get payload from new refresh token
-	payload, err := server.token.VerifyToken(refreshToken)
+	tokenPayload, err = server.token.VerifyToken(refreshToken)
 	if err != nil {
 		return
 	}
 
-	// convert userID string to objectID
-	objectID, err := primitive.ObjectIDFromHex(userID)
+	return
+}
+
+func (server *Server) createSession(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, sessionID string, err error) {
+	var session database.Session
+	db := server.mongoDB.Database("capszo")
+	sessionColl := db.Collection(string(database.SessionColl))
+
+	// get auth tokens
+	accessToken, refreshToken, payload, err := server.getAuthTokens(userID, tokenFor)
 	if err != nil {
 		return
 	}
 
-	// store the new refresh tokenID
-	update := bson.M{"$set": bson.M{"refresh_token_id": payload.ID.String()}}
-	_, err = coll.UpdateByID(context.TODO(), objectID, update)
+	// store the session
+	session.UserID = userID
+	session.TokenID = payload.ID.String()
+	session.TokenFor = payload.TokenFor
+	session.LastRenewed = payload.IssuedAt
+	result, err := sessionColl.InsertOne(context.TODO(), session)
 	if err != nil {
+		return
+	}
+	sessionID = getID(result.InsertedID)
+
+	return
+}
+
+func (server *Server) updateSession(sessionID primitive.ObjectID, tokenPayload *token.Payload) (accessToken string, refreshToken string, err error) {
+	var session database.Session
+	db := server.mongoDB.Database("capszo")
+	sessionColl := db.Collection(string(database.SessionColl))
+
+	// get the refresh tokenID
+	filter := bson.M{"_id": sessionID}
+	if err = sessionColl.FindOne(context.TODO(), filter).Decode(&session); err != nil {
+		return
+	}
+
+	// compare the session info with token payload data
+	if session.UserID != tokenPayload.UserID || session.TokenID != tokenPayload.ID.String() || session.TokenFor != tokenPayload.TokenFor {
+		err = errors.New("INVALID TOKEN FOR USER")
+		return
+	}
+
+	// get auth tokens
+	accessToken, refreshToken, newTokenPayload, err := server.getAuthTokens(tokenPayload.UserID, tokenPayload.TokenFor)
+	if err != nil {
+		return
+	}
+
+	// update the session info
+	update := bson.M{"$set": bson.M{"token_id": newTokenPayload.ID.String(), "last_renewed": newTokenPayload.IssuedAt}}
+	if _, err = sessionColl.UpdateByID(context.TODO(), sessionID, update); err != nil {
 		return
 	}
 
@@ -143,21 +165,19 @@ func (server *Server) getTestToken(ctx *gin.Context) {
 	}
 
 	// get access token
-	cat, _, err := server.getAuthTokens(getID(customer.ID), token.CustomerAccess)
+	cat, _, _, err := server.getAuthTokens(getID(customer.ID), token.CustomerAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
-	mat, _, err := server.getAuthTokens(getID(mart.ID), token.MartAccess)
+	mat, _, _, err := server.getAuthTokens(getID(mart.ID), token.MartAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
-	tat, _, err := server.getAuthTokens(getID(truck.ID), token.TruckAccess)
+	tat, _, _, err := server.getAuthTokens(getID(truck.ID), token.TruckAccess)
 	if err != nil {
 		err = errors.New("TOKEN QUERY ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

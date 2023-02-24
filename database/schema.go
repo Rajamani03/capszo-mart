@@ -1,6 +1,7 @@
 package database
 
 import (
+	"capszo-mart/token"
 	"time"
 )
 
@@ -13,6 +14,7 @@ const (
 	MartColl     Collections = "marts"
 	TruckColl    Collections = "trucks"
 	HaulerColl   Collections = "haulers"
+	SessionColl  Collections = "sessions"
 )
 
 type Customer struct {
@@ -115,6 +117,11 @@ type Hauler struct {
 	UpdatedAt      time.Time    `json:"-" bson:"updated_at"`
 }
 
-type GroceryMisc struct {
-	ID uint64 `json:"-" gorm:"column:id"`
+type Session struct {
+	ID          interface{}    `json:"session_id" bson:"_id,omitempty"`
+	UserID      string         `json:"user_id" bson:"user_id"`
+	TokenID     string         `json:"token_id" bson:"token_id"`
+	TokenFor    token.TokenFor `json:"token_for" bson:"token_for"`
+	LastRenewed time.Time      `json:"last_renewed" bson:"last_renewed"`
+	DeviceInfo  interface{}    `json:"device_info" bson:"device_info"`
 }
