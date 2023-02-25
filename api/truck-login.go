@@ -3,11 +3,9 @@ package api
 import (
 	"capszo-mart/database"
 	"capszo-mart/token"
-	"capszo-mart/util"
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +16,6 @@ func (server *Server) getTruckLoginOTP(ctx *gin.Context) {
 	var request loginOTPRequest
 	var err error
 	db := server.mongoDB.Database("capszo")
-	loginInfoColl := db.Collection("login_info")
 	truckColl := db.Collection(string(database.TruckColl))
 
 	// get request data
@@ -38,21 +35,15 @@ func (server *Server) getTruckLoginOTP(ctx *gin.Context) {
 	}
 	request.UserID = getID(user["_id"])
 
-	// generate otp
-	// otp := util.GetOTP(6)
-	otp := "654321"
-	request.OTP = util.Hash(otp + server.config.Salt)
-
-	// store the login data to login_info collection
-	request.CreatedAt = time.Now()
-	result, err := loginInfoColl.InsertOne(context.TODO(), request)
+	// store login OTP
+	validateKey, err := server.storeLoginOTP(request)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"validate_key": getID(result.InsertedID)})
+	ctx.JSON(http.StatusOK, gin.H{"validate_key": validateKey})
 }
 
 func (server *Server) truckLogin(ctx *gin.Context) {
@@ -61,7 +52,6 @@ func (server *Server) truckLogin(ctx *gin.Context) {
 	var truck database.Truck
 	var err error
 	db := server.mongoDB.Database("capszo")
-	loginInfoColl := db.Collection("login_info")
 	truckColl := db.Collection(string(database.TruckColl))
 
 	// get request data
@@ -70,37 +60,22 @@ func (server *Server) truckLogin(ctx *gin.Context) {
 		return
 	}
 
-	// convert validate key string to objectID
-	objectID, err := primitive.ObjectIDFromHex(request.ValidateKey)
+	// validate login otp
+	loginInfo, err = server.validateLoginOTP(request)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	// get login info
-	filter := bson.M{"_id": objectID}
-	if err = loginInfoColl.FindOne(context.TODO(), filter).Decode(&loginInfo); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// validate input and saved otp
-	hotp := util.Hash(request.OTP + server.config.Salt)
-	if hotp != loginInfo.OTP {
-		err = errors.New("INCORRECT OTP")
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
 	// convert validate key string to objectID
-	objectID, err = primitive.ObjectIDFromHex(loginInfo.UserID)
+	objectID, err := primitive.ObjectIDFromHex(loginInfo.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	// get truck info
-	filter = bson.M{"_id": objectID}
+	filter := bson.M{"_id": objectID}
 	if err = truckColl.FindOne(context.TODO(), filter).Decode(&truck); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
