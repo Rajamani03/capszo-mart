@@ -16,13 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type signupOTPRequest struct {
-	Name         string    `json:"name" bson:"name" binding:"required"`
-	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	OTP          string    `json:"otp" bson:"otp"`
-	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
-}
-
 func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
 	var request signupOTPRequest
 	var err error
@@ -37,13 +30,12 @@ func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
 	}
 
 	// check if mobile number exists
-	filter := bson.D{{Key: "mobile_number", Value: request.MobileNumber}}
-	customerCount, err := customerColl.CountDocuments(context.TODO(), filter)
+	isUserExists, err := checkUserExists(customerColl, request.MobileNumber)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	if customerCount > 0 {
+	if isUserExists {
 		err = errors.New("USER ALREADY EXISTS")
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return

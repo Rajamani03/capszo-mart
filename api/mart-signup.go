@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (server *Server) martSignup(ctx *gin.Context) {
@@ -24,14 +23,13 @@ func (server *Server) martSignup(ctx *gin.Context) {
 	}
 
 	// check if mobile number exists
-	filter := bson.M{"mobile_number": request.MobileNumber}
-	count, err := martColl.CountDocuments(context.TODO(), filter)
+	isUserExists, err := checkUserExists(martColl, request.MobileNumber)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	if count > 0 {
-		err = errors.New("MOBILE NUMBER ALREADY EXISTS")
+	if isUserExists {
+		err = errors.New("USER ALREADY EXISTS")
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
