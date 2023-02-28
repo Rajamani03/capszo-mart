@@ -4,7 +4,6 @@ import (
 	"capszo-mart/middleware"
 	"capszo-mart/token"
 	"capszo-mart/util"
-	"context"
 	"fmt"
 	"net/http"
 
@@ -16,8 +15,6 @@ import (
 const (
 	authorizationPayloadKey = "authorization_payload"
 )
-
-var bgctx = context.Background()
 
 type Server struct {
 	router  *gin.Engine
@@ -110,9 +107,9 @@ func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }
 
-func toString(data interface{}) string {
-	return fmt.Sprintf("%v", data)
-}
+// func toString(data interface{}) string {
+// 	return fmt.Sprintf("%v", data)
+// }
 
 func getID(objectID interface{}) string {
 	return objectID.(primitive.ObjectID).Hex()

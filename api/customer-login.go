@@ -25,7 +25,7 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 	}
 
 	// check if mobile number exists
-	var customer map[string]interface{}
+	var customer database.Customer
 	filter := bson.D{{Key: "mobile_number", Value: request.MobileNumber}}
 	err = customerColl.FindOne(context.TODO(), filter).Decode(&customer)
 	if err != nil {
@@ -33,7 +33,7 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	request.UserID = getID(customer["_id"])
+	request.UserID = getID(customer.ID)
 
 	// store login OTP
 	validateKey, err := server.storeLoginOTP(request)
