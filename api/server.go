@@ -54,10 +54,13 @@ func (server *Server) SetupRouter() {
 	router.POST("/customer/signup", server.customerSignup)
 	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
 	router.POST("/customer/login", server.customerLogin)
+	router.POST("customer/logout", server.logout).Use(middleware.CustomerAuthMiddleware(server.token))
 	router.POST("/mart/login/get-otp", server.getMartLoginOTP)
 	router.POST("/mart/login", server.martLogin)
+	router.POST("mart/logout", server.logout).Use(middleware.MartAuthMiddleware(server.token))
 	router.POST("/truck/login/get-otp", server.getTruckLoginOTP)
 	router.POST("/truck/login", server.truckLogin)
+	router.POST("truck/logout", server.logout).Use(middleware.TruckAuthMiddleware(server.token))
 
 	// customer routes
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)

@@ -15,13 +15,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type renewTokenRequest struct {
+type sessionRequest struct {
 	SessionID    string `json:"session_id" binding:"required"`
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+type logoutRequest struct {
+	SessionID string `json:"session_id" binding:"required"`
+}
+
 func (server *Server) renewToken(ctx *gin.Context) {
-	var request renewTokenRequest
+	var request sessionRequest
 	var err error
 
 	// get request data
@@ -54,6 +58,36 @@ func (server *Server) renewToken(ctx *gin.Context) {
 
 	// response
 	ctx.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
+}
+
+func (server *Server) logout(ctx *gin.Context) {
+	var request logoutRequest
+	var err error
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// convert sessionID string to objectID
+	objectID, err := primitive.ObjectIDFromHex(request.SessionID)
+	if err != nil {
+		err = errors.New("INVALID SESSION ID")
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if err = server.deleteSession(objectID, tokenPayload); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }
 
 func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (accessToken string, refreshToken string, tokenPayload *token.Payload, err error) {
@@ -147,6 +181,32 @@ func (server *Server) updateSession(sessionID primitive.ObjectID, tokenPayload *
 	// update the session info
 	update := bson.M{"$set": bson.M{"token_id": newTokenPayload.ID.String(), "last_renewed": newTokenPayload.IssuedAt}}
 	if _, err = sessionColl.UpdateByID(context.TODO(), sessionID, update); err != nil {
+		return
+	}
+
+	return
+}
+
+func (server *Server) deleteSession(sessionID primitive.ObjectID, tokenPayload *token.Payload) (err error) {
+	// var session database.Session
+	db := server.mongoDB.Database("capszo")
+	sessionColl := db.Collection(string(database.SessionColl))
+
+	// // get the refresh tokenID
+	// filter := bson.M{"_id": sessionID}
+	// if err = sessionColl.FindOne(context.TODO(), filter).Decode(&session); err != nil {
+	// 	return
+	// }
+
+	// // compare the session info with token payload data
+	// if session.UserID != tokenPayload.UserID || session.TokenID != tokenPayload.ID.String() || session.TokenFor != tokenPayload.TokenFor {
+	// 	err = errors.New("INVALID TOKEN FOR USER")
+	// 	return
+	// }
+
+	// delete session
+	delete := bson.M{"_id": sessionID, "user_id": tokenPayload.UserID, "token_for": tokenPayload.TokenFor}
+	if _, err = sessionColl.DeleteOne(context.TODO(), delete); err != nil {
 		return
 	}
 
