@@ -78,7 +78,7 @@ type itemInfo struct {
 	ID              string    `json:"item_id" bson:"_id,omitempty"`
 	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
 	Name            string    `json:"name" bson:"name,omitempty"`
-	ImageURL        string    `json:"image_url" bson:"image_url,omitempty"`
+	ImageURLs       []string  `json:"image_urls" bson:"image_urls,omitempty"`
 	Mrp             float64   `json:"mrp" bson:"mrp,omitempty"`
 	SellingPrice    float64   `json:"selling_price" bson:"selling_price,omitempty"`
 	CostPrice       float64   `json:"cost_price" bson:"cost_price,omitempty"`

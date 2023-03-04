@@ -36,7 +36,7 @@ type Item struct {
 	ID              interface{} `json:"item_id" bson:"_id,omitempty"`
 	MartID          string      `json:"-" bson:"mart_id"`
 	Name            string      `json:"name" bson:"name"`
-	ImageURL        string      `json:"image_url" bson:"image_url"`
+	ImageURLs       []string    `json:"image_urls" bson:"image_urls"`
 	Mrp             float64     `json:"mrp" bson:"mrp"`
 	SellingPrice    float64     `json:"price" bson:"selling_price"`
 	CostPrice       float64     `json:"-" bson:"cost_price"`
