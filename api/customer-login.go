@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
@@ -29,8 +30,13 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 	filter := bson.D{{Key: "mobile_number", Value: request.MobileNumber}}
 	err = customerColl.FindOne(context.TODO(), filter).Decode(&customer)
 	if err != nil {
-		err = errors.New("USER NOT FOUND")
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err == mongo.ErrNoDocuments {
+			err = errors.New("USER NOT FOUND")
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	request.UserID = getID(customer.ID)

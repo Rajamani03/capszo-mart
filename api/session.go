@@ -52,7 +52,11 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	// update session
 	accessToken, refreshToken, err := server.updateSession(objectID, tokenPayload)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err.Error() == "INVALID TOKEN FOR USER" || err.Error() == "SESSION NOT FOUND" {
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 
@@ -163,6 +167,7 @@ func (server *Server) updateSession(sessionID primitive.ObjectID, tokenPayload *
 	// get the refresh tokenID
 	filter := bson.M{"_id": sessionID}
 	if err = sessionColl.FindOne(context.TODO(), filter).Decode(&session); err != nil {
+		err = errors.New("SESSION NOT FOUND")
 		return
 	}
 
