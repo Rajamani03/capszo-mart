@@ -17,6 +17,7 @@ import (
 
 type sessionRequest struct {
 	SessionID    string `json:"session_id" binding:"required"`
+	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
@@ -32,6 +33,15 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	if err = ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
+	}
+
+	// verify access token
+	if request.AccessToken != "" {
+		if _, err = server.token.VerifyToken(request.AccessToken); err == nil {
+			// response
+			ctx.JSON(http.StatusOK, gin.H{"access_token": request.AccessToken, "refresh_token": request.RefreshToken})
+			return
+		}
 	}
 
 	// verify refresh token
