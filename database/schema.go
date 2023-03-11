@@ -122,3 +122,9 @@ type Session struct {
 	LastRenewed time.Time      `json:"last_renewed" bson:"last_renewed"`
 	DeviceInfo  interface{}    `json:"device_info" bson:"device_info"`
 }
+
+type Admin struct {
+	ID           interface{} `json:"admin_id" bson:"_id,omitempty"`
+	Name         string      `json:"name" binding:"required,alpha"`
+	MobileNumber string      `json:"mobile_number" binding:"required,numeric,len=10"`
+}

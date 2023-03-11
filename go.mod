@@ -1,6 +1,6 @@
 module capszo-mart
 
-go 1.19
+go 1.20
 
 require (
 	aidanwoods.dev/go-paseto v1.2.0
