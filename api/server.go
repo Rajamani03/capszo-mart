@@ -50,16 +50,16 @@ func (server *Server) SetupRouter() {
 
 	// auth routes
 	router.POST("/access-token/renew", server.renewToken)
-	router.POST("/admin/login/get-otp", server.getAdminLoginOTP)
-	router.POST("/admin/login", server.adminLogin)
-	router.POST("/customer/signup/get-otp", server.getCustomerSignupOTP)
-	router.POST("/customer/signup", server.customerSignup)
-	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
-	router.POST("/customer/login", server.customerLogin)
-	router.POST("/mart/login/get-otp", server.getMartLoginOTP)
-	router.POST("/mart/login", server.martLogin)
-	router.POST("/truck/login/get-otp", server.getTruckLoginOTP)
-	router.POST("/truck/login", server.truckLogin)
+	router.POST("/admin/login", server.getAdminLoginOTP)
+	router.POST("/admin/login/otp", server.adminLogin)
+	router.POST("/customer/signup", server.getCustomerSignupOTP)
+	router.POST("/customer/signup/otp", server.customerSignup)
+	router.POST("/customer/login", server.getCustomerLoginOTP)
+	router.POST("/customer/login/otp", server.customerLogin)
+	router.POST("/mart/login", server.getMartLoginOTP)
+	router.POST("/mart/login/otp", server.martLogin)
+	router.POST("/truck/login", server.getTruckLoginOTP)
+	router.POST("/truck/login/otp", server.truckLogin)
 	router.POST("/logout", server.logout)
 
 	// customer routes
@@ -87,8 +87,8 @@ func (server *Server) SetupRouter() {
 	truckRouter.PATCH("/order")
 
 	// admin routes
-	authMiddleware = middleware.AdminAuthMiddleware(server.token)
-	adminRouter := router.Group("/admin").Use(authMiddleware)
+	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
+	adminRouter := router.Group("/admin")
 	adminRouter.GET("/test-token", server.getTestToken)
 	adminRouter.POST("/mart/signup", server.martSignup)
 	adminRouter.POST("/truck/signup", server.truckSignup)

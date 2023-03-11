@@ -17,7 +17,7 @@ import (
 )
 
 func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
-	var request signupOTPRequest
+	var request signupRequest
 	var err error
 	db := server.mongoDB.Database("capszo")
 	signupInfoColl := db.Collection("signup_info")
@@ -70,8 +70,8 @@ func (server *Server) getCustomerSignupOTP(ctx *gin.Context) {
 }
 
 func (server *Server) customerSignup(ctx *gin.Context) {
-	var request loginRequest
-	var signupInfo signupOTPRequest
+	var request loginOTPRequest
+	var signupInfo signupRequest
 	var customer database.Customer
 	var err error
 	db := server.mongoDB.Database("capszo")

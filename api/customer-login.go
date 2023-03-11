@@ -14,7 +14,7 @@ import (
 )
 
 func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
-	var request loginOTPRequest
+	var request loginRequest
 	var err error
 	db := server.mongoDB.Database("capszo")
 	customerColl := db.Collection(string(database.CustomerColl))
@@ -53,8 +53,8 @@ func (server *Server) getCustomerLoginOTP(ctx *gin.Context) {
 }
 
 func (server *Server) customerLogin(ctx *gin.Context) {
-	var request loginRequest
-	var loginInfo loginOTPRequest
+	var request loginOTPRequest
+	var loginInfo loginRequest
 	var customer database.Customer
 	var err error
 	db := server.mongoDB.Database("capszo")

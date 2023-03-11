@@ -13,7 +13,7 @@ import (
 )
 
 func (server *Server) getAdminLoginOTP(ctx *gin.Context) {
-	var request loginOTPRequest
+	var request loginRequest
 	var err error
 	db := server.mongoDB.Database("capszo")
 	adminColl := db.Collection("admin")
@@ -47,8 +47,8 @@ func (server *Server) getAdminLoginOTP(ctx *gin.Context) {
 }
 
 func (server *Server) adminLogin(ctx *gin.Context) {
-	var request loginRequest
-	var loginInfo loginOTPRequest
+	var request loginOTPRequest
+	var loginInfo loginRequest
 	var admin database.Admin
 	var err error
 	db := server.mongoDB.Database("capszo")

@@ -12,19 +12,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type loginOTPRequest struct {
+type loginRequest struct {
 	UserID       string    `json:"user_id" bson:"user_id"`
 	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	OTP          string    `json:"otp" bson:"otp"`
 	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
 }
 
-type loginRequest struct {
+type loginOTPRequest struct {
 	ValidateKey string `json:"validate_key" binding:"required"`
 	OTP         string `json:"otp" binding:"required,numeric,len=6"`
 }
 
-func (server *Server) storeLoginOTP(request loginOTPRequest) (validateKey string, err error) {
+func (server *Server) storeLoginOTP(request loginRequest) (validateKey string, err error) {
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
 
@@ -53,7 +53,7 @@ func (server *Server) storeLoginOTP(request loginOTPRequest) (validateKey string
 	return getID(result.InsertedID), err
 }
 
-func (server *Server) validateLoginOTP(request loginRequest) (loginInfo loginOTPRequest, err error) {
+func (server *Server) validateLoginOTP(request loginOTPRequest) (loginInfo loginRequest, err error) {
 	db := server.mongoDB.Database("capszo")
 	loginInfoColl := db.Collection("login_info")
 

@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type signupOTPRequest struct {
+type signupRequest struct {
 	Name         string    `json:"name" bson:"name" binding:"required"`
 	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	OTP          string    `json:"otp" bson:"otp"`
