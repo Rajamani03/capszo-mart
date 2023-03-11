@@ -50,17 +50,17 @@ func (server *Server) SetupRouter() {
 
 	// auth routes
 	router.POST("/access-token/renew", server.renewToken)
+	router.POST("/admin/login/get-otp", server.getAdminLoginOTP)
+	router.POST("/admin/login", server.adminLogin)
 	router.POST("/customer/signup/get-otp", server.getCustomerSignupOTP)
 	router.POST("/customer/signup", server.customerSignup)
 	router.POST("/customer/login/get-otp", server.getCustomerLoginOTP)
 	router.POST("/customer/login", server.customerLogin)
-	router.POST("customer/logout", server.logout).Use(middleware.CustomerAuthMiddleware(server.token))
 	router.POST("/mart/login/get-otp", server.getMartLoginOTP)
 	router.POST("/mart/login", server.martLogin)
-	router.POST("mart/logout", server.logout).Use(middleware.MartAuthMiddleware(server.token))
 	router.POST("/truck/login/get-otp", server.getTruckLoginOTP)
 	router.POST("/truck/login", server.truckLogin)
-	router.POST("truck/logout", server.logout).Use(middleware.TruckAuthMiddleware(server.token))
+	router.POST("/logout", server.logout)
 
 	// customer routes
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
@@ -84,16 +84,16 @@ func (server *Server) SetupRouter() {
 	authMiddleware = middleware.TruckAuthMiddleware(server.token)
 	truckRouter := router.Group("/truck").Use(authMiddleware)
 	truckRouter.GET("/orders", server.getOrders)
-	// truckRouter.PATCH("/order")
+	truckRouter.PATCH("/order")
 
 	// admin routes
-	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
-	adminRouter := router.Group("/admin")
+	authMiddleware = middleware.AdminAuthMiddleware(server.token)
+	adminRouter := router.Group("/admin").Use(authMiddleware)
 	adminRouter.GET("/test-token", server.getTestToken)
-	adminRouter.GET("/order/:id", server.getOrder)
-	adminRouter.GET("/orders", server.getOrders)
 	adminRouter.POST("/mart/signup", server.martSignup)
 	adminRouter.POST("/truck/signup", server.truckSignup)
+	adminRouter.GET("/order/:id", server.getOrder)
+	adminRouter.GET("/orders", server.getOrders)
 	adminRouter.POST("/items", server.addItems)
 	adminRouter.PATCH("item", server.updateItem)
 	// adminRouter.GET("/customers", server.getAllCustomers)
