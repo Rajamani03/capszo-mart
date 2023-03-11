@@ -37,8 +37,29 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, items)
 }
 
+type itemInput struct {
+	ID              string    `json:"item_id" bson:"_id,omitempty"`
+	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
+	Name            string    `json:"name" bson:"name,omitempty"`
+	ImageURLs       []string  `json:"image_urls" bson:"image_urls,omitempty"`
+	Mrp             float64   `json:"mrp" bson:"mrp,omitempty"`
+	SellingPrice    float64   `json:"selling_price" bson:"selling_price,omitempty"`
+	CostPrice       float64   `json:"cost_price" bson:"cost_price,omitempty"`
+	Quantity        float64   `json:"quantity" bson:"quantity,omitempty"`
+	Unit            string    `json:"unit" bson:"unit,omitempty"`
+	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity,omitempty"`
+	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit,omitempty"`
+	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity,omitempty"`
+	Brand           string    `json:"brand" bson:"brand,omitempty"`
+	Category        string    `json:"category" bson:"category,omitempty"`
+	SubCategory     string    `json:"sub_category" bson:"sub_category,omitempty"`
+	OtherNames      []string  `json:"other_names" bson:"other_names,omitempty"`
+	CreatedAt       time.Time `json:"-" bson:"created_at,omitempty"`
+	UpdatedAt       time.Time `json:"-" bson:"updated_at,omitempty"`
+}
+
 func (server *Server) addItems(ctx *gin.Context) {
-	var request []itemInfo
+	var request []itemInput
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -74,29 +95,8 @@ func (server *Server) addItems(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"message": "items added successfully", "item_ids": result.InsertedIDs})
 }
 
-type itemInfo struct {
-	ID              string    `json:"item_id" bson:"_id,omitempty"`
-	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
-	Name            string    `json:"name" bson:"name,omitempty"`
-	ImageURLs       []string  `json:"image_urls" bson:"image_urls,omitempty"`
-	Mrp             float64   `json:"mrp" bson:"mrp,omitempty"`
-	SellingPrice    float64   `json:"selling_price" bson:"selling_price,omitempty"`
-	CostPrice       float64   `json:"cost_price" bson:"cost_price,omitempty"`
-	Quantity        float64   `json:"quantity" bson:"quantity,omitempty"`
-	Unit            string    `json:"unit" bson:"unit,omitempty"`
-	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity,omitempty"`
-	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit,omitempty"`
-	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity,omitempty"`
-	Brand           string    `json:"brand" bson:"brand,omitempty"`
-	Category        string    `json:"category" bson:"category,omitempty"`
-	SubCategory     string    `json:"sub_category" bson:"sub_category,omitempty"`
-	OtherNames      []string  `json:"other_names" bson:"other_names,omitempty"`
-	CreatedAt       time.Time `json:"-" bson:"created_at,omitempty"`
-	UpdatedAt       time.Time `json:"-" bson:"updated_at,omitempty"`
-}
-
 func (server *Server) updateItem(ctx *gin.Context) {
-	var request itemInfo
+	var request itemInput
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
