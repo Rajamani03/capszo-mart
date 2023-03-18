@@ -66,25 +66,26 @@ func (server *Server) SetupRouter() {
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
 	customerRouter := router.Group("/").Use(authMiddleware)
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
+	customerRouter.GET("/search", server.searchItem)
 	customerRouter.GET("/order/:id", server.getOrder)
 	customerRouter.GET("customer/orders", server.getOrders)
 	customerRouter.POST("/order", server.order)
-	customerRouter.PATCH("/customer/basket", server.updateBasket)
-	customerRouter.PATCH("/customer/address", server.updateCustomerAddress)
+	customerRouter.PUT("customer/basket", server.updateBasket)
+	customerRouter.PUT("/customer/address", server.updateCustomerAddress)
 	// customerRouter.PUT("/email", server.updateCustomerEmail)
 
 	// mart routes
 	authMiddleware = middleware.MartAuthMiddleware(server.token)
 	martRouter := router.Group("/mart").Use(authMiddleware)
 	martRouter.POST("/items", server.addItems)
-	martRouter.PATCH("item", server.updateItem)
+	martRouter.PUT("item", server.updateItem)
 	martRouter.GET("/orders", server.getOrders)
 
 	// truck routes
 	authMiddleware = middleware.TruckAuthMiddleware(server.token)
 	truckRouter := router.Group("/truck").Use(authMiddleware)
 	truckRouter.GET("/orders", server.getOrders)
-	truckRouter.PATCH("/order")
+	truckRouter.PUT("/order")
 
 	// admin routes
 	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
@@ -95,7 +96,7 @@ func (server *Server) SetupRouter() {
 	adminRouter.GET("/order/:id", server.getOrder)
 	adminRouter.GET("/orders", server.getOrders)
 	adminRouter.POST("/items", server.addItems)
-	adminRouter.PATCH("item", server.updateItem)
+	adminRouter.PUT("item", server.updateItem)
 	// adminRouter.GET("/customers", server.getAllCustomers)
 
 	// add router to server struct
@@ -110,7 +111,7 @@ func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }
 
-// func toString(data interface{}) string {
+// func toString(data interface{}) string {tyui
 // 	return fmt.Sprintf("%v", data)
 // }
 

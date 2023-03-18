@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (server *Server) getAllItems(ctx *gin.Context) {
@@ -37,29 +38,29 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, items)
 }
 
-type itemInput struct {
+type inputItem struct {
 	ID              string    `json:"item_id" bson:"_id,omitempty"`
-	MartID          string    `json:"mart_id" bson:"mart_id,omitempty"`
-	Name            string    `json:"name" bson:"name,omitempty"`
-	ImageURLs       []string  `json:"image_urls" bson:"image_urls,omitempty"`
-	Mrp             float64   `json:"mrp" bson:"mrp,omitempty"`
-	SellingPrice    float64   `json:"selling_price" bson:"selling_price,omitempty"`
-	CostPrice       float64   `json:"cost_price" bson:"cost_price,omitempty"`
-	Quantity        float64   `json:"quantity" bson:"quantity,omitempty"`
-	Unit            string    `json:"unit" bson:"unit,omitempty"`
-	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity,omitempty"`
-	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit,omitempty"`
-	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity,omitempty"`
-	Brand           string    `json:"brand" bson:"brand,omitempty"`
-	Category        string    `json:"category" bson:"category,omitempty"`
-	SubCategory     string    `json:"sub_category" bson:"sub_category,omitempty"`
-	OtherNames      []string  `json:"other_names" bson:"other_names,omitempty"`
-	CreatedAt       time.Time `json:"-" bson:"created_at,omitempty"`
-	UpdatedAt       time.Time `json:"-" bson:"updated_at,omitempty"`
+	MartID          string    `json:"mart_id" bson:"mart_id"`
+	Name            string    `json:"name" bson:"name"`
+	ImageURLs       []string  `json:"image_urls" bson:"image_urls"`
+	Mrp             float64   `json:"mrp" bson:"mrp"`
+	SellingPrice    float64   `json:"selling_price" bson:"selling_price"`
+	CostPrice       float64   `json:"cost_price" bson:"cost_price"`
+	Quantity        float64   `json:"quantity" bson:"quantity"`
+	Unit            string    `json:"unit" bson:"unit"`
+	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity"`
+	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit"`
+	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity"`
+	Brand           string    `json:"brand" bson:"brand"`
+	Category        string    `json:"category" bson:"category"`
+	SubCategory     string    `json:"sub_category" bson:"sub_category"`
+	OtherNames      []string  `json:"other_names" bson:"other_names"`
+	CreatedAt       time.Time `json:"-" bson:"created_at"`
+	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
 }
 
 func (server *Server) addItems(ctx *gin.Context) {
-	var request []itemInput
+	var request []inputItem
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -96,7 +97,7 @@ func (server *Server) addItems(ctx *gin.Context) {
 }
 
 func (server *Server) updateItem(ctx *gin.Context) {
-	var request itemInput
+	var request inputItem
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -135,4 +136,32 @@ func (server *Server) updateItem(ctx *gin.Context) {
 
 	// response
 	ctx.JSON(http.StatusCreated, gin.H{"message": "items updated successfully", "item_id": result.UpsertedID})
+}
+
+func (server *Server) searchItem(ctx *gin.Context) {
+	var martID string
+	var query string
+	var items []database.Item
+	var err error
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection(string(database.GroceryColl))
+
+	// get query parameters
+	martID = ctx.Query("mart-id")
+	query = ctx.Query("q")
+
+	// get items with the query from DB
+	filter := bson.M{"mart_id": martID, "$text": bson.M{"$search": query}}
+	opts := options.Find().SetLimit(20)
+	cursor, err := groceriesColl.Find(context.TODO(), filter, opts)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if err = cursor.All(context.TODO(), &items); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	// response
+	ctx.JSON(http.StatusOK, items)
 }
