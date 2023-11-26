@@ -1,8 +1,10 @@
 package api
 
 import (
+	"capszo-mart/blueprint"
 	"capszo-mart/database"
 	"capszo-mart/token"
+	"capszo-mart/util"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type orderRequest struct {
@@ -132,13 +135,13 @@ func (server *Server) order(ctx *gin.Context) {
 	order.MartID = request.MartID
 	order.CustomerMobileNumber = request.CustomerMobileNumber
 	order.Items = request.Items
-	order.PackagingCharge = mart.PackagingCharge
-	order.DeliveryCharge = mart.DeliveryCharge
-	order.Tax = 0
+	order.PackagingCharge = mart.OrderPreferences.PackagingCharge
+	order.DeliveryCharge = mart.OrderPreferences.DeliveryCharge
+	order.Tax = database.GST{SGST: 0, CGST: 0}
 	order.TruckTips = math.Abs(request.TruckTips)
 	order.Donation = math.Abs(request.Donation)
 	order.Discount = 0
-	order.Total += (order.DeliveryCharge + order.PackagingCharge + order.Tax + order.TruckTips + order.Donation) - order.Discount
+	order.Total += (order.DeliveryCharge + order.PackagingCharge + order.Tax.SGST + order.Tax.CGST + order.TruckTips + order.Donation) - order.Discount
 	order.Total = math.Ceil(order.Total)
 	// order.Total = math.Ceil(order.Total*100) / 100
 	order.OrderedDate = time.Now()
@@ -146,6 +149,7 @@ func (server *Server) order(ctx *gin.Context) {
 	order.DeliveryDate = time.Now().Add(time.Hour * 24)
 	order.Status = database.OrderConfirmed
 	order.Coupon = request.Coupon
+	order.OTP = util.GetOTP(4)
 	order.OnlinePayment = "{}"
 	order.TruckID = ""
 	order.Distance = 0
@@ -172,7 +176,7 @@ func (server *Server) order(ctx *gin.Context) {
 	}
 
 	// response
-	ctx.JSON(http.StatusCreated, gin.H{"order_info": order})
+	ctx.JSON(http.StatusCreated, order)
 }
 
 type getOrderRequest struct {
@@ -201,6 +205,7 @@ func (server *Server) getOrders(ctx *gin.Context) {
 
 	// set the filter wrt request
 	var filter = make(primitive.M)
+
 	if request.MartID != "" {
 		filter["mart_id"] = request.MartID
 	}
@@ -210,6 +215,7 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	if request.CustomerMobileNumber != "" {
 		filter["customer_mobile_number"] = request.CustomerMobileNumber
 	}
+
 	if request.OrderedDate != "" {
 		orderedDate, err := time.Parse("2006-01-02", request.OrderedDate)
 		if err != nil {
@@ -244,8 +250,43 @@ func (server *Server) getOrders(ctx *gin.Context) {
 		return
 	}
 
+	// transform order json based on views
+	var transformedOrders []map[string]interface{}
+	for _, order := range orders {
+		switch tokenPayload.TokenFor {
+		case token.AdminAccess:
+			transformedOrder, err := blueprint.OrderTransform(order, blueprint.AdminOrder)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+			transformedOrders = append(transformedOrders, transformedOrder)
+		case token.CustomerAccess:
+			transformedOrder, err := blueprint.OrderTransform(order, blueprint.CustomerOrder)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+			transformedOrders = append(transformedOrders, transformedOrder)
+		case token.MartAccess:
+			transformedOrder, err := blueprint.OrderTransform(order, blueprint.MartOrder)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+			transformedOrders = append(transformedOrders, transformedOrder)
+		default:
+			transformedOrder, err := blueprint.OrderTransform(order, blueprint.MartOrder)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+			transformedOrders = append(transformedOrders, transformedOrder)
+		}
+	}
+
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"order_info": orders})
+	ctx.JSON(http.StatusOK, transformedOrders)
 }
 
 func (server *Server) getOrder(ctx *gin.Context) {
@@ -253,8 +294,23 @@ func (server *Server) getOrder(ctx *gin.Context) {
 	db := server.mongoDB.Database("capszo")
 	orderColl := db.Collection(string(database.OrderColl))
 
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	// get mart_id from params
 	martID := ctx.Param("id")
+
+	var filter = make(primitive.M)
+
+	// filter by user id
+	switch tokenPayload.TokenFor {
+	case token.CustomerAccess:
+		filter["customer_id"] = tokenPayload.UserID
+	case token.MartAccess:
+		filter["mart_id"] = tokenPayload.UserID
+	case token.TruckAccess:
+		filter["truck_id"] = tokenPayload.UserID
+	}
 
 	// get order using _id
 	objectID, err := primitive.ObjectIDFromHex(martID)
@@ -262,12 +318,95 @@ func (server *Server) getOrder(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	filter := bson.M{"_id": objectID}
+
+	filter["_id"] = objectID
 	if err = orderColl.FindOne(context.TODO(), filter).Decode(&order); err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
+	// transform order json based on views
+	var transformedOrder map[string]interface{}
+	switch tokenPayload.TokenFor {
+	case token.AdminAccess:
+		transformedOrder, err = blueprint.OrderTransform(order, blueprint.AdminOrder)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	case token.CustomerAccess:
+		transformedOrder, err = blueprint.OrderTransform(order, blueprint.CustomerOrder)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	case token.MartAccess:
+		transformedOrder, err = blueprint.OrderTransform(order, blueprint.MartOrder)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	default:
+		transformedOrder, err = blueprint.OrderTransform(order, blueprint.MartOrder)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	}
+
 	// response
-	ctx.JSON(http.StatusOK, gin.H{"order_info": order})
+	ctx.JSON(http.StatusOK, transformedOrder)
+}
+
+type deliverOrderRequest struct {
+	OrderID string `json:"order_id" binding:"required"`
+	OTP     string `json:"otp" binding:"required,numeric,len=4"`
+}
+
+func (server *Server) deliverOrder(ctx *gin.Context) {
+	var request deliverOrderRequest
+	var order database.Order
+	var err error
+	db := server.mongoDB.Database("capszo")
+	orderColl := db.Collection(string(database.OrderColl))
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// get order using _id
+	objectID, err := primitive.ObjectIDFromHex(request.OrderID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// get otp of the specific order
+	filter := bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
+	opts := options.FindOne().SetProjection(bson.M{"otp": 1})
+	if err = orderColl.FindOne(context.TODO(), filter, opts).Decode(&order); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if order.OTP != request.OTP {
+		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("INVALID OTP")))
+		return
+	}
+
+	// update order status
+	update := bson.M{"$set": bson.M{"status": database.OrderDelivered}}
+	_, err = orderColl.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, gin.H{"message": "order delivered"})
 }

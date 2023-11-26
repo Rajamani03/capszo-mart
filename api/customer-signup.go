@@ -110,7 +110,9 @@ func (server *Server) customerSignup(ctx *gin.Context) {
 	// store customer data in db
 	customer.Name = signupInfo.Name
 	customer.MobileNumber = signupInfo.MobileNumber
-	customer.CreatedAt = time.Now()
+	currentTime := time.Now()
+	customer.CreatedAt = currentTime
+	customer.UpdatedAt = currentTime
 	result, err := customerColl.InsertOne(context.TODO(), customer)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))

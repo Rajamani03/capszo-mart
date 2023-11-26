@@ -28,40 +28,41 @@ type Customer struct {
 	GroceryBasket []BasketItem `json:"grocery_basket" bson:"grocery_basket"`
 	NearestMartID string       `json:"nearest_mart_id" bson:"nearest_mart_id"`
 	Wishlist      []string     `json:"wishlist" bson:"wishlist"`
-	CreatedAt     time.Time    `json:"-" bson:"created_at"`
-	UpdatedAt     time.Time    `json:"-" bson:"updated_at"`
+	CreatedAt     time.Time    `json:"created_at" bson:"created_at"`
+	UpdatedAt     time.Time    `json:"updated_at" bson:"updated_at"`
 }
 
 type Item struct {
 	ID              interface{} `json:"item_id" bson:"_id,omitempty"`
-	MartID          string      `json:"-" bson:"mart_id"`
+	MartID          string      `json:"mart_id" bson:"mart_id"`
 	Name            string      `json:"name" bson:"name"`
-	ImageURLs       []string    `json:"image_urls" bson:"image_urls"`
+	ImageLinks      []string    `json:"image_links" bson:"image_links"`
 	Mrp             float64     `json:"mrp" bson:"mrp"`
-	SellingPrice    float64     `json:"price" bson:"selling_price"`
-	CostPrice       float64     `json:"-" bson:"cost_price"`
+	SellingPrice    float64     `json:"selling_price" bson:"selling_price"`
+	CostPrice       float64     `json:"cost_price" bson:"cost_price"`
+	GST             GST         `json:"gst" bson:"gst"`
 	Quantity        float64     `json:"quantity" bson:"quantity"`
 	Unit            ItemUnit    `json:"unit" bson:"unit"`
 	StepQuantity    float32     `json:"step_quantity" bson:"step_quantity"`
 	IndividualLimit float64     `json:"individual_limit" bson:"individual_limit"`
-	StockQuantity   float64     `json:"-" bson:"stock_quantity"`
+	StockQuantity   float64     `json:"stock_quantity" bson:"stock_quantity"`
 	Brand           string      `json:"brand" bson:"brand"`
 	Category        string      `json:"category" bson:"category"`
 	SubCategory     string      `json:"sub_category" bson:"sub_category"`
 	OtherNames      []string    `json:"other_names" bson:"other_names"`
-	CreatedAt       time.Time   `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time   `json:"-" bson:"updated_at"`
+	CreatedAt       time.Time   `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at" bson:"updated_at"`
 }
 
 type Order struct {
 	ID                   interface{} `json:"order_id" bson:"_id,omitempty"`
-	CustomerID           string      `json:"-" bson:"customer_id"`
+	CustomerID           string      `json:"customer_id" bson:"customer_id"`
 	MartID               string      `json:"mart_id" bson:"mart_id" gorm:"column:mart_id" binding:"required,numeric"`
 	CustomerMobileNumber string      `json:"customer_mobile_number" bson:"customer_mobile_number" binding:"required,numeric"`
 	Items                []OrderItem `json:"grocery_items" bson:"grocery_items" binding:"required"`
 	PackagingCharge      float64     `json:"packaging_charge" bson:"packaging_charge"`
 	DeliveryCharge       float64     `json:"delivery_charge" bson:"delivery_charge"`
-	Tax                  float64     `json:"tax" bson:"tax"`
+	Tax                  GST         `json:"tax" bson:"tax"`
 	TruckTips            float64     `json:"truck_tips" bson:"truck_tips" binding:"required,numeric"`
 	Donation             float64     `json:"donation" bson:"donation" binding:"required,numeric"`
 	Discount             float64     `json:"discount" bson:"discount"`
@@ -73,20 +74,20 @@ type Order struct {
 	Coupon               string      `json:"coupon" bson:"coupon" binding:"alphanum"`
 	OTP                  string      `json:"otp" bson:"otp" binding:"required,numeric,len=4"`
 	OnlinePayment        string      `json:"online_payment" bson:"online_payment"`
-	TruckID              string      `json:"-" bson:"truck_id" gorm:"column:truck_id"`
-	Distance             float32     `json:"-" bson:"distance"`
+	TruckID              string      `json:"truck_id" bson:"truck_id" gorm:"column:truck_id"`
+	Distance             float32     `json:"distance" bson:"distance"`
 }
 
 type Mart struct {
-	ID              interface{} `json:"mart_id" bson:"_id,omitempty"`
-	Name            string      `json:"name" bson:"name"`
-	MobileNumber    string      `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	Address         Address     `json:"mart_address" bson:"address"`
-	Status          MartStatus  `json:"mart_status" bson:"status"`
-	PackagingCharge float64     `json:"packaging_charge" bson:"packaging_charge"`
-	DeliveryCharge  float64     `json:"delivery_charge" bson:"delivery_charge"`
-	CreatedAt       time.Time   `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time   `json:"-" bson:"updated_at"`
+	ID                interface{}         `json:"mart_id" bson:"_id,omitempty"`
+	Name              string              `json:"name" bson:"name"`
+	MobileNumber      string              `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
+	Address           Address             `json:"mart_address" bson:"address"`
+	Status            MartStatus          `json:"mart_status" bson:"status"`
+	AvailablePincodes []string            `json:"available_pincodes" bson:"available_pincodes"`
+	OrderPreferences  MartOrderPreference `json:"order_preferences" bson:"order_preferences"`
+	CreatedAt         time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt         time.Time           `json:"updated_at" bson:"updated_at"`
 }
 
 type Truck struct {
@@ -126,5 +127,5 @@ type Session struct {
 type Admin struct {
 	ID           interface{} `json:"admin_id" bson:"_id,omitempty"`
 	Name         string      `json:"name" binding:"required,alpha"`
-	MobileNumber string      `json:"mobile_number" binding:"required,numeric,len=10"`
+	MobileNumber string      `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 }

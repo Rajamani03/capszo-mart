@@ -35,7 +35,9 @@ func (server *Server) martSignup(ctx *gin.Context) {
 	}
 
 	// store mart data in db
-	request.CreatedAt = time.Now()
+	currentTime := time.Now()
+	request.CreatedAt = currentTime
+	request.UpdatedAt = currentTime
 	result, err := martColl.InsertOne(context.TODO(), request)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))

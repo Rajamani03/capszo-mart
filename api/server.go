@@ -65,11 +65,14 @@ func (server *Server) SetupRouter() {
 	// customer routes
 	authMiddleware := middleware.CustomerAuthMiddleware(server.token)
 	customerRouter := router.Group("/").Use(authMiddleware)
+	customerRouter.GET("/customer", server.getCustomerInfo)
 	customerRouter.GET("/items/:mart-id", server.getAllItems)
-	customerRouter.GET("/search", server.searchItem)
-	customerRouter.GET("/order/:id", server.getOrder)
+	customerRouter.GET("/items/search", server.searchItem)
+	customerRouter.GET("/mart/order-preferences", server.getMartOrderPreference)
+	customerRouter.GET("customer/order/:id", server.getOrder)
 	customerRouter.GET("customer/orders", server.getOrders)
 	customerRouter.POST("/order", server.order)
+	// customerRouter.GET("/basket",)
 	customerRouter.PUT("customer/basket", server.updateBasket)
 	customerRouter.PUT("/customer/address", server.updateCustomerAddress)
 	// customerRouter.PUT("/email", server.updateCustomerEmail)
@@ -78,8 +81,9 @@ func (server *Server) SetupRouter() {
 	authMiddleware = middleware.MartAuthMiddleware(server.token)
 	martRouter := router.Group("/mart").Use(authMiddleware)
 	martRouter.POST("/items", server.addItems)
-	martRouter.PUT("item", server.updateItem)
+	martRouter.PUT("/item", server.updateItem)
 	martRouter.GET("/orders", server.getOrders)
+	martRouter.PUT("/order/deliver", server.deliverOrder)
 
 	// truck routes
 	authMiddleware = middleware.TruckAuthMiddleware(server.token)
@@ -88,8 +92,8 @@ func (server *Server) SetupRouter() {
 	truckRouter.PUT("/order")
 
 	// admin routes
-	// authMiddleware = middleware.AdminAuthMiddleware(server.token)
-	adminRouter := router.Group("/admin")
+	authMiddleware = middleware.AdminAuthMiddleware(server.token)
+	adminRouter := router.Group("/admin").Use(authMiddleware)
 	adminRouter.GET("/test-token", server.getTestToken)
 	adminRouter.POST("/mart/signup", server.martSignup)
 	adminRouter.POST("/truck/signup", server.truckSignup)
@@ -111,9 +115,9 @@ func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }
 
-// func toString(data interface{}) string {tyui
-// 	return fmt.Sprintf("%v", data)
-// }
+func toString(data interface{}) string {
+	return fmt.Sprintf("%v", data)
+}
 
 func getID(objectID interface{}) string {
 	return objectID.(primitive.ObjectID).Hex()

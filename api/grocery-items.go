@@ -1,6 +1,7 @@
 package api
 
 import (
+	"capszo-mart/blueprint"
 	"capszo-mart/database"
 	"capszo-mart/token"
 	"context"
@@ -34,33 +35,23 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 		return
 	}
 
-	// response
-	ctx.JSON(http.StatusOK, items)
-}
+	// transform items
+	var transformedItems []map[string]interface{}
+	for _, item := range items {
+		transformedItem, err := blueprint.ItemTransform(item, blueprint.CustomerItem)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		transformedItems = append(transformedItems, transformedItem)
+	}
 
-type inputItem struct {
-	ID              string    `json:"item_id" bson:"_id,omitempty"`
-	MartID          string    `json:"mart_id" bson:"mart_id"`
-	Name            string    `json:"name" bson:"name"`
-	ImageURLs       []string  `json:"image_urls" bson:"image_urls"`
-	Mrp             float64   `json:"mrp" bson:"mrp"`
-	SellingPrice    float64   `json:"selling_price" bson:"selling_price"`
-	CostPrice       float64   `json:"cost_price" bson:"cost_price"`
-	Quantity        float64   `json:"quantity" bson:"quantity"`
-	Unit            string    `json:"unit" bson:"unit"`
-	StepQuantity    float32   `json:"step_quantity" bson:"step_quantity"`
-	IndividualLimit float64   `json:"individual_limit" bson:"individual_limit"`
-	StockQuantity   float64   `json:"stock_quantity" bson:"stock_quantity"`
-	Brand           string    `json:"brand" bson:"brand"`
-	Category        string    `json:"category" bson:"category"`
-	SubCategory     string    `json:"sub_category" bson:"sub_category"`
-	OtherNames      []string  `json:"other_names" bson:"other_names"`
-	CreatedAt       time.Time `json:"-" bson:"created_at"`
-	UpdatedAt       time.Time `json:"-" bson:"updated_at"`
+	// response
+	ctx.JSON(http.StatusOK, transformedItems)
 }
 
 func (server *Server) addItems(ctx *gin.Context) {
-	var request []inputItem
+	var request []database.Item
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -97,7 +88,7 @@ func (server *Server) addItems(ctx *gin.Context) {
 }
 
 func (server *Server) updateItem(ctx *gin.Context) {
-	var request inputItem
+	var request database.Item
 	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
@@ -112,19 +103,23 @@ func (server *Server) updateItem(ctx *gin.Context) {
 	}
 
 	// convert itemID string to objectID
-	objectID, err := primitive.ObjectIDFromHex(request.ID)
+	objectID, err := primitive.ObjectIDFromHex(toString(request.ID))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	filter := bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
+	// set filters for query
+	var filter primitive.M
 	if tokenPayload.TokenFor == token.AdminAccess {
 		filter = bson.M{"_id": objectID}
+	} else {
+		filter = bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
+		request.MartID = tokenPayload.UserID
 	}
 
 	// update grocery items
-	fmt.Printf("filter: %v\n", filter)
+	request.ID = objectID
 	request.UpdatedAt = time.Now()
 	update := bson.M{"$set": request}
 	result, err := groceriesColl.UpdateOne(context.TODO(), filter, update)
@@ -135,7 +130,7 @@ func (server *Server) updateItem(ctx *gin.Context) {
 	fmt.Printf("result.MatchedCount: %v\n", result.MatchedCount)
 
 	// response
-	ctx.JSON(http.StatusCreated, gin.H{"message": "items updated successfully", "item_id": result.UpsertedID})
+	ctx.JSON(http.StatusOK, gin.H{"message": "items updated successfully", "item_id": request.ID})
 }
 
 func (server *Server) searchItem(ctx *gin.Context) {
@@ -162,6 +157,18 @@ func (server *Server) searchItem(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+
+	// transform items
+	var transformedItems []map[string]interface{}
+	for _, item := range items {
+		transformedItem, err := blueprint.ItemTransform(item, blueprint.CustomerItem)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		transformedItems = append(transformedItems, transformedItem)
+	}
+
 	// response
-	ctx.JSON(http.StatusOK, items)
+	ctx.JSON(http.StatusOK, transformedItems)
 }

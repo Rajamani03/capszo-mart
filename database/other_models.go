@@ -34,6 +34,16 @@ type Location struct {
 	Longitude float64 `json:"longitude" binding:"required,numeric"`
 }
 
+type MartOrderPreference struct {
+	PackagingCharge float64 `json:"packaging_charge" bson:"packaging_charge"`
+	DeliveryCharge  float64 `json:"delivery_charge" bson:"delivery_charge"`
+}
+
+type GST struct {
+	SGST float64 `json:"sgst" bson:"sgst"`
+	CGST float64 `json:"cgst" bson:"cgst"`
+}
+
 type Gender string
 
 const (
