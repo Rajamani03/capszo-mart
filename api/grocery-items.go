@@ -5,6 +5,7 @@ import (
 	"capszo-mart/database"
 	"capszo-mart/token"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,16 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (server *Server) getAllItems(ctx *gin.Context) {
+func (server *Server) getItems(ctx *gin.Context) {
 	var items []database.Item
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
 
-	// get mart_id from params
-	martID := ctx.Param("mart-id")
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get mart_id from query params
+	martID := ctx.Query("mart-id")
 
 	// get all grocery items from groceries collections
 	filter := bson.M{"mart_id": martID}
@@ -35,10 +40,21 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 		return
 	}
 
+	// set item view
+	var itemView blueprint.ItemViews
+	switch tokenPayload.TokenFor {
+	case token.TruckAccess:
+		itemView = blueprint.AdminItemView
+	case token.CustomerAccess:
+		itemView = blueprint.CustomerItemView
+	case token.MartAccess:
+		itemView = blueprint.MartItemView
+	}
+
 	// transform items
 	var transformedItems []map[string]interface{}
 	for _, item := range items {
-		transformedItem, err := blueprint.ItemTransform(item, blueprint.CustomerItem)
+		transformedItem, err := blueprint.ItemTransform(item, itemView)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
@@ -48,6 +64,59 @@ func (server *Server) getAllItems(ctx *gin.Context) {
 
 	// response
 	ctx.JSON(http.StatusOK, transformedItems)
+}
+
+func (server *Server) getItem(ctx *gin.Context) {
+	var item database.Item
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection(string(database.GroceryColl))
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get mart_id from query params
+	itemID := ctx.Param("id")
+
+	// get order using _id
+	objectID, err := primitive.ObjectIDFromHex(itemID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// get all grocery items from groceries collections
+	filter := bson.M{"_id": objectID}
+	if err = groceriesColl.FindOne(context.TODO(), filter).Decode(&item); err != nil {
+		if mongo.ErrNoDocuments == err {
+			err = errors.New("NO ITEM FOUND")
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// set item view
+	var itemView blueprint.ItemViews
+	switch tokenPayload.TokenFor {
+	case token.TruckAccess:
+		itemView = blueprint.AdminItemView
+	case token.CustomerAccess:
+		itemView = blueprint.CustomerItemView
+	case token.MartAccess:
+		itemView = blueprint.MartItemView
+	}
+
+	// transform items
+	var transformedItem map[string]interface{}
+	transformedItem, err = blueprint.ItemTransform(item, itemView)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, transformedItem)
 }
 
 func (server *Server) addItems(ctx *gin.Context) {
@@ -141,6 +210,9 @@ func (server *Server) searchItem(ctx *gin.Context) {
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
 
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	// get query parameters
 	martID = ctx.Query("mart-id")
 	query = ctx.Query("q")
@@ -158,10 +230,21 @@ func (server *Server) searchItem(ctx *gin.Context) {
 		return
 	}
 
+	// set item view
+	var itemView blueprint.ItemViews
+	switch tokenPayload.TokenFor {
+	case token.TruckAccess:
+		itemView = blueprint.AdminItemView
+	case token.CustomerAccess:
+		itemView = blueprint.CustomerItemView
+	case token.MartAccess:
+		itemView = blueprint.MartItemView
+	}
+
 	// transform items
 	var transformedItems []map[string]interface{}
 	for _, item := range items {
-		transformedItem, err := blueprint.ItemTransform(item, blueprint.CustomerItem)
+		transformedItem, err := blueprint.ItemTransform(item, itemView)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 			return

@@ -5,15 +5,15 @@ import (
 	"capszo-mart/util"
 )
 
-type itemViews int32
+type ItemViews int32
 
 const (
-	AdminItem itemViews = iota
-	CustomerItem
-	MartItem
+	AdminItemView ItemViews = iota
+	CustomerItemView
+	MartItemView
 )
 
-func ItemTransform(item database.Item, view itemViews) (map[string]interface{}, error) {
+func ItemTransform(item database.Item, view ItemViews) (map[string]interface{}, error) {
 	var transformedItem map[string]interface{}
 	var err error
 
@@ -23,16 +23,16 @@ func ItemTransform(item database.Item, view itemViews) (map[string]interface{}, 
 	}
 
 	switch view {
-	case AdminItem:
+	case AdminItemView:
 		return transformedItem, nil
-	case CustomerItem:
+	case CustomerItemView:
 		delete(transformedItem, "cost_price")
 		delete(transformedItem, "stock_quantity")
 		transformedItem["price"] = transformedItem["selling_price"]
 		delete(transformedItem, "selling_price")
 		delete(transformedItem, "created_at")
 		delete(transformedItem, "updated_at")
-	case MartItem:
+	case MartItemView:
 		delete(transformedItem, "created_at")
 		delete(transformedItem, "updated_at")
 	}

@@ -197,6 +197,13 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
+	// get query params
+	request.MartID = ctx.Query("mart-id")
+	request.TruckID = ctx.Query("truck-id")
+	request.CustomerMobileNumber = ctx.Query("customer-mobile-number")
+	request.OrderedDate = ctx.Query("ordered-date")
+	request.Status = ctx.Query("status")
+
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -225,16 +232,22 @@ func (server *Server) getOrders(ctx *gin.Context) {
 		dateFilter := bson.M{"$gt": primitive.NewDateTimeFromTime(orderedDate.AddDate(0, 0, -1)), "$lt": primitive.NewDateTimeFromTime(orderedDate.AddDate(0, 0, 1))}
 		filter["ordered_date"] = dateFilter
 	}
+
 	if request.Status != "" {
 		filter["status"] = request.Status
 	}
 
-	// filter by user id
+	// filter by token
+	var orderView blueprint.OrderViews
 	switch tokenPayload.TokenFor {
+	case token.AdminAccess:
+		orderView = blueprint.AdminOrderView
 	case token.CustomerAccess:
 		filter["customer_id"] = tokenPayload.UserID
+		orderView = blueprint.CustomerOrderView
 	case token.MartAccess:
 		filter["mart_id"] = tokenPayload.UserID
+		orderView = blueprint.MartOrderView
 	case token.TruckAccess:
 		filter["truck_id"] = tokenPayload.UserID
 	}
@@ -253,36 +266,12 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	// transform order json based on views
 	var transformedOrders []map[string]interface{}
 	for _, order := range orders {
-		switch tokenPayload.TokenFor {
-		case token.AdminAccess:
-			transformedOrder, err := blueprint.OrderTransform(order, blueprint.AdminOrder)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-				return
-			}
-			transformedOrders = append(transformedOrders, transformedOrder)
-		case token.CustomerAccess:
-			transformedOrder, err := blueprint.OrderTransform(order, blueprint.CustomerOrder)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-				return
-			}
-			transformedOrders = append(transformedOrders, transformedOrder)
-		case token.MartAccess:
-			transformedOrder, err := blueprint.OrderTransform(order, blueprint.MartOrder)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-				return
-			}
-			transformedOrders = append(transformedOrders, transformedOrder)
-		default:
-			transformedOrder, err := blueprint.OrderTransform(order, blueprint.MartOrder)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-				return
-			}
-			transformedOrders = append(transformedOrders, transformedOrder)
+		transformedOrder, err := blueprint.OrderTransform(order, orderView)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
 		}
+		transformedOrders = append(transformedOrders, transformedOrder)
 	}
 
 	// response
@@ -298,22 +287,27 @@ func (server *Server) getOrder(ctx *gin.Context) {
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
 	// get mart_id from params
-	martID := ctx.Param("id")
+	orderID := ctx.Param("id")
 
 	var filter = make(primitive.M)
 
-	// filter by user id
+	// filter by token
+	var orderView blueprint.OrderViews
 	switch tokenPayload.TokenFor {
+	case token.AdminAccess:
+		orderView = blueprint.AdminOrderView
 	case token.CustomerAccess:
 		filter["customer_id"] = tokenPayload.UserID
+		orderView = blueprint.CustomerOrderView
 	case token.MartAccess:
 		filter["mart_id"] = tokenPayload.UserID
+		orderView = blueprint.MartOrderView
 	case token.TruckAccess:
 		filter["truck_id"] = tokenPayload.UserID
 	}
 
 	// get order using _id
-	objectID, err := primitive.ObjectIDFromHex(martID)
+	objectID, err := primitive.ObjectIDFromHex(orderID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -327,31 +321,10 @@ func (server *Server) getOrder(ctx *gin.Context) {
 
 	// transform order json based on views
 	var transformedOrder map[string]interface{}
-	switch tokenPayload.TokenFor {
-	case token.AdminAccess:
-		transformedOrder, err = blueprint.OrderTransform(order, blueprint.AdminOrder)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
-		}
-	case token.CustomerAccess:
-		transformedOrder, err = blueprint.OrderTransform(order, blueprint.CustomerOrder)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
-		}
-	case token.MartAccess:
-		transformedOrder, err = blueprint.OrderTransform(order, blueprint.MartOrder)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
-		}
-	default:
-		transformedOrder, err = blueprint.OrderTransform(order, blueprint.MartOrder)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
-		}
+	transformedOrder, err = blueprint.OrderTransform(order, orderView)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
 
 	// response

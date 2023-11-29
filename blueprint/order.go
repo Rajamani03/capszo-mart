@@ -5,15 +5,15 @@ import (
 	"capszo-mart/util"
 )
 
-type orderViews int32
+type OrderViews int32
 
 const (
-	AdminOrder orderViews = iota
-	CustomerOrder
-	MartOrder
+	AdminOrderView OrderViews = iota
+	CustomerOrderView
+	MartOrderView
 )
 
-func OrderTransform(order database.Order, view orderViews) (map[string]interface{}, error) {
+func OrderTransform(order database.Order, view OrderViews) (map[string]interface{}, error) {
 	var transformedOrder map[string]interface{}
 	var err error
 
@@ -23,11 +23,11 @@ func OrderTransform(order database.Order, view orderViews) (map[string]interface
 	}
 
 	switch view {
-	case AdminOrder:
+	case AdminOrderView:
 		return transformedOrder, nil
-	case CustomerOrder:
+	case CustomerOrderView:
 		delete(transformedOrder, "customer_id")
-	case MartOrder:
+	case MartOrderView:
 		delete(transformedOrder, "customer_id")
 		delete(transformedOrder, "mart_id")
 		delete(transformedOrder, "otp")
