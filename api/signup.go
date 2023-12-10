@@ -9,10 +9,12 @@ import (
 )
 
 type signupRequest struct {
-	Name         string    `json:"name" bson:"name" binding:"required"`
-	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	OTP          string    `json:"otp" bson:"otp"`
-	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
+	Name           string    `json:"name" bson:"name" binding:"required"`
+	MobileNumber   string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
+	OTP            string    `json:"otp" bson:"otp"`
+	DevicePlatform string    `json:"device_platform" bson:"device_platform"`
+	DeviceName     string    `json:"device_name" bson:"device_name"`
+	CreatedAt      time.Time `json:"created_at" bson:"created_at"`
 }
 
 func checkUserExists(collection *mongo.Collection, mobileNumber string) (bool, error) {

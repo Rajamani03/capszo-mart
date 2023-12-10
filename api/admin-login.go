@@ -81,8 +81,11 @@ func (server *Server) adminLogin(ctx *gin.Context) {
 		return
 	}
 
+	// format device info
+	deviceInfo := map[string]string{"platform": loginInfo.DevicePlatform, "name": loginInfo.DeviceName}
+
 	// create session and get access and refresh token
-	sessionID, accessToken, refreshToken, err := server.createSession(loginInfo.UserID, token.AdminAccess)
+	sessionID, accessToken, refreshToken, err := server.createSession(loginInfo.UserID, token.AdminAccess, deviceInfo)
 	if err != nil {
 		err = errors.New("SESSION ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

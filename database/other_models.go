@@ -20,8 +20,8 @@ type OrderItem struct {
 	ItemID       string  `json:"item_id" bson:"item_id" binding:"required,alphanum"`
 	Quantity     float64 `json:"quantity" bson:"quantity" binding:"required,numeric"`
 	Mrp          float64 `json:"mrp" bson:"mrp"`
-	SellingPrice float64 `json:"price" bson:"selling_price"`
-	CostPrice    float64 `json:"-" bson:"cost_price"`
+	SellingPrice float64 `json:"selling_price" bson:"selling_price"`
+	CostPrice    float64 `json:"cost_price" bson:"cost_price"`
 }
 
 type Rating struct {

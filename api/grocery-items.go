@@ -17,53 +17,51 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (server *Server) getItems(ctx *gin.Context) {
-	var items []database.Item
+func (server *Server) addItems(ctx *gin.Context) {
+	var request []database.Item
+	var err error
 	db := server.mongoDB.Database("capszo")
 	groceriesColl := db.Collection(string(database.GroceryColl))
 
 	// get token payload
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
-	// get mart_id from query params
-	martID := ctx.Query("mart-id")
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
-	// get all grocery items from groceries collections
-	filter := bson.M{"mart_id": martID}
-	cursor, err := groceriesColl.Find(context.TODO(), filter)
+	// change the datatype
+	var items []interface{}
+	for _, item := range request {
+		if tokenPayload.TokenFor == token.MartAccess {
+			item.MartID = tokenPayload.UserID
+		}
+		item.CreatedAt = time.Now()
+		item.UpdatedAt = time.Now()
+		items = append(items, item)
+	}
+
+	// insert all the items
+	result, err := groceriesColl.InsertMany(context.TODO(), items)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	if err = cursor.All(context.TODO(), &items); err != nil {
+
+	// create text index
+	model := mongo.IndexModel{
+		Keys: bson.D{{Key: "name", Value: "text"}, {Key: "other_names", Value: "text"}},
+	}
+	_, err = groceriesColl.Indexes().CreateOne(context.TODO(), model)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	// set item view
-	var itemView blueprint.ItemViews
-	switch tokenPayload.TokenFor {
-	case token.TruckAccess:
-		itemView = blueprint.AdminItemView
-	case token.CustomerAccess:
-		itemView = blueprint.CustomerItemView
-	case token.MartAccess:
-		itemView = blueprint.MartItemView
-	}
-
-	// transform items
-	var transformedItems []map[string]interface{}
-	for _, item := range items {
-		transformedItem, err := blueprint.ItemTransform(item, itemView)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-			return
-		}
-		transformedItems = append(transformedItems, transformedItem)
-	}
-
 	// response
-	ctx.JSON(http.StatusOK, transformedItems)
+	ctx.JSON(http.StatusCreated, gin.H{"message": "items added successfully", "item_ids": result.InsertedIDs})
 }
 
 func (server *Server) getItem(ctx *gin.Context) {
@@ -119,89 +117,6 @@ func (server *Server) getItem(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, transformedItem)
 }
 
-func (server *Server) addItems(ctx *gin.Context) {
-	var request []database.Item
-	var err error
-	db := server.mongoDB.Database("capszo")
-	groceriesColl := db.Collection(string(database.GroceryColl))
-
-	// get token payload
-	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-
-	// get request data
-	if err = ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// change the datatype
-	var items []interface{}
-	for _, item := range request {
-		if tokenPayload.TokenFor == token.MartAccess {
-			item.MartID = tokenPayload.UserID
-		}
-		item.CreatedAt = time.Now()
-		item.UpdatedAt = time.Now()
-		items = append(items, item)
-	}
-
-	// insert all the items
-	result, err := groceriesColl.InsertMany(context.TODO(), items)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	// response
-	ctx.JSON(http.StatusCreated, gin.H{"message": "items added successfully", "item_ids": result.InsertedIDs})
-}
-
-func (server *Server) updateItem(ctx *gin.Context) {
-	var request database.Item
-	var err error
-	db := server.mongoDB.Database("capszo")
-	groceriesColl := db.Collection(string(database.GroceryColl))
-
-	// get token payload
-	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-
-	// get request data
-	if err = ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	// convert itemID string to objectID
-	objectID, err := primitive.ObjectIDFromHex(toString(request.ID))
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	// set filters for query
-	var filter primitive.M
-	if tokenPayload.TokenFor == token.AdminAccess {
-		filter = bson.M{"_id": objectID}
-	} else {
-		filter = bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
-		request.MartID = tokenPayload.UserID
-	}
-
-	// update grocery items
-	request.ID = objectID
-	request.UpdatedAt = time.Now()
-	update := bson.M{"$set": request}
-	result, err := groceriesColl.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	fmt.Printf("result.MatchedCount: %v\n", result.MatchedCount)
-
-	// response
-	ctx.JSON(http.StatusOK, gin.H{"message": "items updated successfully", "item_id": request.ID})
-}
-
 func (server *Server) searchItem(ctx *gin.Context) {
 	var martID string
 	var query string
@@ -254,4 +169,99 @@ func (server *Server) searchItem(ctx *gin.Context) {
 
 	// response
 	ctx.JSON(http.StatusOK, transformedItems)
+}
+
+func (server *Server) getMartItems(ctx *gin.Context) {
+	var items []database.Item
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection(string(database.GroceryColl))
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get mart_id from query params
+	martID := ctx.Query("mart-id")
+
+	// get all grocery items from groceries collections
+	filter := bson.M{"mart_id": martID}
+	cursor, err := groceriesColl.Find(context.TODO(), filter)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if err = cursor.All(context.TODO(), &items); err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// set item view
+	var itemView blueprint.ItemViews
+	switch tokenPayload.TokenFor {
+	case token.TruckAccess:
+		itemView = blueprint.AdminItemView
+	case token.CustomerAccess:
+		itemView = blueprint.CustomerItemView
+	case token.MartAccess:
+		itemView = blueprint.MartItemView
+	}
+
+	// transform items
+	var transformedItems []map[string]interface{}
+	for _, item := range items {
+		transformedItem, err := blueprint.ItemTransform(item, itemView)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		transformedItems = append(transformedItems, transformedItem)
+	}
+
+	// response
+	ctx.JSON(http.StatusOK, transformedItems)
+}
+
+func (server *Server) updateItem(ctx *gin.Context) {
+	var request database.Item
+	var err error
+	db := server.mongoDB.Database("capszo")
+	groceriesColl := db.Collection(string(database.GroceryColl))
+
+	// get token payload
+	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	// get request data
+	if err = ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// convert itemID string to objectID
+	objectID, err := primitive.ObjectIDFromHex(toString(request.ID))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// set filters for query
+	var filter primitive.M
+	if tokenPayload.TokenFor == token.AdminAccess {
+		filter = bson.M{"_id": objectID}
+	} else {
+		filter = bson.M{"_id": objectID, "mart_id": tokenPayload.UserID}
+		request.MartID = tokenPayload.UserID
+	}
+
+	// update grocery items
+	request.ID = objectID
+	request.UpdatedAt = time.Now()
+	update := bson.M{"$set": request}
+	result, err := groceriesColl.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	fmt.Printf("result.MatchedCount: %v\n", result.MatchedCount)
+
+	// response
+	ctx.JSON(http.StatusOK, gin.H{"message": "items updated successfully", "item_id": request.ID})
 }

@@ -51,7 +51,7 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	objectID, err := primitive.ObjectIDFromHex(request.SessionID)
 	if err != nil {
 		err = errors.New("INVALID SESSION ID")
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
@@ -134,7 +134,7 @@ func (server *Server) getAuthTokens(userID string, tokenFor token.TokenFor) (acc
 	return
 }
 
-func (server *Server) createSession(userID string, tokenFor token.TokenFor) (sessionID string, accessToken string, refreshToken string, err error) {
+func (server *Server) createSession(userID string, tokenFor token.TokenFor, deviceInfo map[string]string) (sessionID string, accessToken string, refreshToken string, err error) {
 	var session database.Session
 	db := server.mongoDB.Database("capszo")
 	sessionColl := db.Collection(string(database.SessionColl))
@@ -160,6 +160,7 @@ func (server *Server) createSession(userID string, tokenFor token.TokenFor) (ses
 	session.TokenID = payload.ID.String()
 	session.TokenFor = payload.TokenFor
 	session.LastRenewed = payload.IssuedAt
+	session.DeviceInfo = deviceInfo
 	result, err := sessionColl.InsertOne(context.TODO(), session)
 	if err != nil {
 		return

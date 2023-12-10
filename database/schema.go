@@ -9,6 +9,7 @@ type Collections string
 
 const (
 	CustomerColl Collections = "customers"
+	ProductColl  Collections = "products"
 	GroceryColl  Collections = "groceries"
 	OrderColl    Collections = "mart_orders"
 	MartColl     Collections = "marts"
@@ -18,7 +19,7 @@ const (
 )
 
 type Customer struct {
-	ID            interface{}  `json:"-" bson:"_id,omitempty"`
+	ID            interface{}  `json:"customer_id" bson:"_id,omitempty"`
 	Name          string       `json:"name" bson:"name" binding:"required,alpha"`
 	MobileNumber  string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	EmailAddress  string       `json:"email_address" bson:"email_address"`
@@ -26,14 +27,30 @@ type Customer struct {
 	Gender        Gender       `json:"gender" bson:"gender"`
 	BirthDate     time.Time    `json:"birth_date" bson:"birth_date"`
 	GroceryBasket []BasketItem `json:"grocery_basket" bson:"grocery_basket"`
-	NearestMartID string       `json:"nearest_mart_id" bson:"nearest_mart_id"`
 	Wishlist      []string     `json:"wishlist" bson:"wishlist"`
 	CreatedAt     time.Time    `json:"created_at" bson:"created_at"`
 	UpdatedAt     time.Time    `json:"updated_at" bson:"updated_at"`
 }
 
+type Product struct {
+	ID            interface{}            `json:"product_id" bson:"_id,omitempty"`
+	Name          string                 `json:"name" bson:"name"`
+	ImageLinks    []string               `json:"image_links" bson:"image_links"`
+	Brand         string                 `json:"brand" bson:"brand"`
+	ModelNumber   string                 `json:"model_number" bson:"model_number"`
+	Configuration map[string]interface{} `json:"configuration" bson:"configuration"`
+	GST           GST                    `json:"gst" bson:"gst"`
+	Category      string                 `json:"category" bson:"category"`
+	SubCategory   string                 `json:"sub_category" bson:"sub_category"`
+	Collection    string                 `json:"collection" bson:"collection"`
+	OtherNames    []string               `json:"other_names" bson:"other_names"`
+	CreatedAt     time.Time              `json:"created_at" bson:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at" bson:"updated_at"`
+}
+
 type Item struct {
 	ID              interface{} `json:"item_id" bson:"_id,omitempty"`
+	ProductID       string      `json:"product_id" bson:"product_id"`
 	MartID          string      `json:"mart_id" bson:"mart_id"`
 	Name            string      `json:"name" bson:"name"`
 	ImageLinks      []string    `json:"image_links" bson:"image_links"`

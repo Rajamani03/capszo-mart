@@ -13,10 +13,12 @@ import (
 )
 
 type loginRequest struct {
-	UserID       string    `json:"user_id" bson:"user_id"`
-	MobileNumber string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
-	OTP          string    `json:"otp" bson:"otp"`
-	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
+	UserID         string    `json:"user_id" bson:"user_id"`
+	MobileNumber   string    `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
+	OTP            string    `json:"otp" bson:"otp"`
+	DevicePlatform string    `json:"device_platform" bson:"device_platform"`
+	DeviceName     string    `json:"device_name" bson:"device_name"`
+	CreatedAt      time.Time `json:"created_at" bson:"created_at"`
 }
 
 type loginOTPRequest struct {
@@ -39,8 +41,8 @@ func (server *Server) storeLoginOTP(request loginRequest) (validateKey string, e
 	}
 
 	// generate otp
-	// otp := util.GetOTP(6)
 	otp := "654321"
+	// otp := util.GetOTP(6)
 	request.OTP = util.Hash(otp + server.config.Salt)
 
 	// store the login data to login_info collection

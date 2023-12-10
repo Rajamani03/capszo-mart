@@ -119,8 +119,11 @@ func (server *Server) customerSignup(ctx *gin.Context) {
 		return
 	}
 
+	// format device info
+	deviceInfo := map[string]string{"platform": signupInfo.DevicePlatform, "name": signupInfo.DeviceName}
+
 	// create session and get access and refresh token
-	sessionID, accessToken, refreshToken, err := server.createSession(getID(result.InsertedID), token.CustomerAccess)
+	sessionID, accessToken, refreshToken, err := server.createSession(getID(result.InsertedID), token.CustomerAccess, deviceInfo)
 	if err != nil {
 		err = errors.New("SESSION ERROR")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
