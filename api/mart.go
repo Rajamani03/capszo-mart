@@ -18,7 +18,7 @@ func (server *Server) getMartOrderPreference(ctx *gin.Context) {
 	martColl := db.Collection(string(database.MartColl))
 
 	// get query parameters
-	martID := ctx.Query("mart-id")
+	martID := ctx.Param("id")
 
 	// convert validate key string to objectID
 	objectID, err := primitive.ObjectIDFromHex(martID)

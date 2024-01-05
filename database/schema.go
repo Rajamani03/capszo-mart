@@ -19,7 +19,7 @@ const (
 )
 
 type Customer struct {
-	ID            interface{}  `json:"customer_id" bson:"_id,omitempty"`
+	ID            interface{}  `json:"-" bson:"_id,omitempty"`
 	Name          string       `json:"name" bson:"name" binding:"required,alpha"`
 	MobileNumber  string       `json:"mobile_number" bson:"mobile_number" binding:"required,numeric,len=10"`
 	EmailAddress  string       `json:"email_address" bson:"email_address"`

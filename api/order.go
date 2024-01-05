@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -203,6 +204,7 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	request.CustomerMobileNumber = ctx.Query("customer-mobile-number")
 	request.OrderedDate = ctx.Query("ordered-date")
 	request.Status = ctx.Query("status")
+	offset := ctx.Query("offset")
 
 	// get request data
 	if err = ctx.ShouldBindJSON(&request); err != nil {
@@ -253,7 +255,13 @@ func (server *Server) getOrders(ctx *gin.Context) {
 	}
 
 	// find order by filters
-	cursor, err := orderColl.Find(context.TODO(), filter)
+	intOffset, err := strconv.ParseInt(offset, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	opts := options.Find().SetLimit(20).SetSkip(intOffset)
+	cursor, err := orderColl.Find(context.TODO(), filter, opts)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

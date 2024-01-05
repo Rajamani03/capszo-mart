@@ -6,8 +6,8 @@ import (
 	"capszo-mart/token"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -118,8 +118,6 @@ func (server *Server) getItem(ctx *gin.Context) {
 }
 
 func (server *Server) searchItem(ctx *gin.Context) {
-	var martID string
-	var query string
 	var items []database.Item
 	var err error
 	db := server.mongoDB.Database("capszo")
@@ -129,12 +127,22 @@ func (server *Server) searchItem(ctx *gin.Context) {
 	tokenPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
 	// get query parameters
-	martID = ctx.Query("mart-id")
-	query = ctx.Query("q")
+	martID := ctx.Query("mart-id")
+	searchTerm := ctx.Query("search")
+	category := ctx.Query("category")
+	offset := ctx.Query("offset")
 
 	// get items with the query from DB
-	filter := bson.M{"mart_id": martID, "$text": bson.M{"$search": query}}
-	opts := options.Find().SetLimit(20)
+	filter := bson.M{"mart_id": martID, "category": category}
+	if searchTerm != "" {
+		filter["$text"] = bson.M{"$search": searchTerm}
+	}
+	intOffset, err := strconv.ParseInt(offset, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	opts := options.Find().SetLimit(20).SetSkip(intOffset)
 	cursor, err := groceriesColl.Find(context.TODO(), filter, opts)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -255,12 +263,11 @@ func (server *Server) updateItem(ctx *gin.Context) {
 	request.ID = objectID
 	request.UpdatedAt = time.Now()
 	update := bson.M{"$set": request}
-	result, err := groceriesColl.UpdateOne(context.TODO(), filter, update)
+	_, err = groceriesColl.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	fmt.Printf("result.MatchedCount: %v\n", result.MatchedCount)
 
 	// response
 	ctx.JSON(http.StatusOK, gin.H{"message": "items updated successfully", "item_id": request.ID})
